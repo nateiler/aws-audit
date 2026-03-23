@@ -1,0 +1,33 @@
+{
+	"name": "@nateiler/aws-audit",
+	"version": "1.0.0",
+	"description": "AWS Audit",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"axiom": "axiom",
+		"test": "pnpm -r run test",
+		"test:coverage": "pnpm -r run test:coverage",
+		"cdk:synth:dev": "ENV=dev pnpm -r run cdk:synth",
+		"cdk:deploy:dev": "ENV=dev pnpm -r run cdk:deploy --profile asug_middleware",
+		"prepare": "husky"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "catalog:build",
+		"@commitlint/cli": "catalog:build",
+		"@commitlint/config-conventional": "catalog:build",
+		"husky": "catalog:build",
+		"lint-staged": "catalog:build"
+	},
+	"lint-staged": {
+		"*.{ts,tsx,js,jsx,json}": [
+			"biome check --write --no-errors-on-unmatched"
+		]
+	},
+	"packageManager": "pnpm@10.6.2",
+	"pnpm": {
+		"onlyBuiltDependencies": [
+			"esbuild"
+		]
+	}
+}

@@ -1,0 +1,130 @@
+import * as z from "zod/v4";
+import { App, ResourceType } from "../config.js";
+import { Status } from "./log.js";
+import { EventBridgeEventSchema } from "./model.js";
+
+/**
+ * Escalation tiers for audit visibility
+ * - INTERNAL (1): Internal system audits, not shown to end users
+ * - INFO (2): Informational audits, shown in detailed views
+ * - PUBLIC (3): Public audits, shown in summary views
+ */
+export const Tier = {
+	INTERNAL: 1,
+	INFO: 2,
+	PUBLIC: 3,
+} as const;
+export type AnyTier = (typeof Tier)[keyof typeof Tier];
+
+/**
+ * Schema for escalation tier values (1-3)
+ */
+const TierSchema = z.number().int().gte(1).lte(3);
+
+/**
+ * Schema for audit status values (success, warn, fail, skip)
+ */
+const StatusSchema = z.enum(Object.values(Status));
+
+/**
+ * Schema for application identifiers
+ */
+const AppSchema = z.enum(Object.values(App));
+
+/**
+ * Schema for resource type identifiers
+ */
+const ResourceTypeSchema = z.enum(Object.values(ResourceType));
+
+/**
+ * Schema for referencing a resource within an application
+ * Used to identify the target or source of an audit
+ */
+const ResourceReferenceSchema = z.object({
+	app: AppSchema,
+	id: z.union([z.string(), z.number()]).optional(),
+	type: ResourceTypeSchema,
+});
+export type ResourceReference = z.output<typeof ResourceReferenceSchema>;
+
+/**
+ * Schema for additional related resources
+ * Extends ResourceReferenceSchema for linking secondary resources to an audit
+ */
+const AdditionalResourceSchema = ResourceReferenceSchema.extend({
+	id: z.union([z.string(), z.number()]).optional(),
+});
+export type AdditionalResource = z.output<typeof AdditionalResourceSchema>;
+
+/**
+ * Recursive type for context values
+ * Supports strings, numbers, booleans, and nested objects
+ */
+type ContextValue = string | number | boolean | { [key: string]: ContextValue };
+
+/**
+ * Schema for recursive context values
+ * Allows nested key-value structures for storing audit metadata
+ */
+const RecursiveContextValueSchema: z.ZodType<ContextValue> = z.union([
+	z.string(),
+	z.number(),
+	z.boolean(),
+	z.lazy(() => z.record(z.string(), RecursiveContextValueSchema)),
+]);
+
+/**
+ * Schema for audit context - a key-value store for additional metadata
+ */
+const ContextSchema = z.record(z.string(), RecursiveContextValueSchema);
+
+/**
+ * Base schema for audit records
+ * Internal use only within the schema directory - not exported from index
+ *
+ * @internal
+ */
+export const BaseSchema = z.object({
+	/** Unique identifier for the audit record */
+	id: z.string(),
+	/** Tenant identifier for multi-tenancy support (optional) */
+	tenantId: z.string().optional(),
+	/** Current status of the audited operation */
+	status: StatusSchema,
+	/** Escalation tier for visibility (defaults to INFO) */
+	tier: TierSchema.default(2),
+	/** The primary resource being audited */
+	target: ResourceReferenceSchema,
+	/** The resource that initiated the operation (optional) */
+	source: ResourceReferenceSchema.optional(),
+	/** Additional metadata as key-value pairs */
+	context: ContextSchema.optional(),
+	/** Name of the operation being audited */
+	operation: z.string(),
+	/** Human-readable description of the audit */
+	message: z.string().optional(),
+	/** Whether this audit can be re-run/retried */
+	rerunable: z.boolean().optional(),
+	/** Trace identifier for distributed tracing */
+	trace: z.string().optional(),
+	/** Original EventBridge event that triggered this audit */
+	event: EventBridgeEventSchema.optional(),
+	/** Error details if the operation failed */
+	error: z
+		.union([
+			z.string().transform((error) => {
+				try {
+					return JSON.parse(error);
+				} catch {
+					return error;
+				}
+			}),
+			z
+				.instanceof(Error)
+				.transform((error) =>
+					JSON.parse(JSON.stringify(error, Object.getOwnPropertyNames(error))),
+				),
+			z.record(z.any(), z.any()),
+		])
+		.optional(),
+});

@@ -1,0 +1,46 @@
+{
+	"name": "@nateiler/aws-audit-sdk",
+	"type": "module",
+	"private": true,
+	"exports": {
+		".": "./src/index.ts",
+		"./batch": "./src/batch/index.ts",
+		"./middleware": "./src/middleware/middy.ts"
+	},
+	"scripts": {
+		"build": "tsc -p ./tsconfig.json",
+		"check-types": "tsc --noEmit -p ./tsconfig.json",
+		"lint": "npx biome lint",
+		"lint:fix": "npx biome lint --fix",
+		"format": "npx biome format",
+		"format:fix": "npx biome format --fix",
+		"pre-commit": "pnpm run check-types && pnpm run format && pnpm run lint",
+		"test": "vitest run",
+		"test:watch": "vitest",
+		"test:coverage": "vitest run --coverage"
+	},
+	"dependencies": {
+		"@aws-lambda-powertools/batch": "catalog:aws-powertools",
+		"@aws-lambda-powertools/commons": "catalog:aws-powertools",
+		"@aws-lambda-powertools/logger": "catalog:aws-powertools",
+		"@aws-sdk/client-dynamodb": "catalog:aws-sdk",
+		"@aws-sdk/client-eventbridge": "catalog:aws-sdk",
+		"@aws-sdk/util-dynamodb": "catalog:aws-sdk",
+		"ksuid": "catalog:utilities",
+		"lodash.merge": "catalog:utilities",
+		"zod": "catalog:utilities"
+	},
+	"devDependencies": {
+		"@tsconfig/node20": "catalog:build",
+		"@types/aws-lambda": "catalog:types",
+		"@types/lodash.merge": "catalog:types",
+		"@types/node": "catalog:types",
+		"@vitest/coverage-v8": "catalog:build",
+		"ts-node": "catalog:build",
+		"typescript": "catalog:build",
+		"vitest": "catalog:build"
+	},
+	"engines": {
+		"node": ">=20"
+	}
+}
