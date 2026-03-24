@@ -7,16 +7,21 @@ import {
 } from "@aws-sdk/client-dynamodb";
 import { marshall } from "@aws-sdk/util-dynamodb";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { App, ResourceType } from "./config.js";
 import { DynamoDB } from "./constants.js";
 import {
 	AuditRepository,
-	type Identifiers,
-	type ListItemsOptions,
-	type ListTraceItems,
+	type TypedIdentifiers,
+	type TypedListItemsOptions,
+	type TypedListTraceItems,
 } from "./repository.js";
 import { encodeNextPageToken } from "./repository.utils.js";
 import type { UpsertAuditInput } from "./schema/service.js";
+import { App, ResourceType, testConfig } from "./test-config.js";
+
+// Type aliases using test config for convenience
+type Identifiers = TypedIdentifiers<typeof testConfig>;
+type ListItemsOptions = TypedListItemsOptions<typeof testConfig>;
+type ListTraceItems = TypedListTraceItems<typeof testConfig>;
 
 // Mock the DynamoDB client
 vi.mock("@aws-sdk/client-dynamodb", async () => {
@@ -37,7 +42,7 @@ describe("AuditRepository", () => {
 		error: ReturnType<typeof vi.fn>;
 		debug: ReturnType<typeof vi.fn>;
 	};
-	let repository: AuditRepository;
+	let repository: AuditRepository<typeof testConfig>;
 
 	const createMockAuditItem = (
 		overrides: Partial<Record<string, unknown>> = {},
@@ -93,6 +98,7 @@ describe("AuditRepository", () => {
 
 		repository = new AuditRepository(
 			mockLogger as unknown as Logger,
+			testConfig,
 			mockClient as unknown as DynamoDBClient,
 		);
 	});
@@ -105,6 +111,7 @@ describe("AuditRepository", () => {
 		it("should create default client when not provided", () => {
 			const repoWithDefaults = new AuditRepository(
 				mockLogger as unknown as Logger,
+				testConfig,
 			);
 
 			expect(repoWithDefaults).toBeInstanceOf(AuditRepository);

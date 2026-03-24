@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { App, ResourceType } from "./config.js";
 import type { Audit } from "./schema/audit.js";
 import type { UpsertAuditInput } from "./schema/service.js";
 import { AuditService } from "./service.js";
+import { App, ResourceType, testConfig } from "./test-config.js";
 
 // Mock the repository
 vi.mock("./repository.js", () => ({
@@ -27,7 +27,7 @@ vi.mock("./utils.js", () => ({
 }));
 
 describe("AuditService", () => {
-	let service: AuditService;
+	let service: AuditService<typeof testConfig>;
 	let mockLogger: {
 		error: ReturnType<typeof vi.fn>;
 		info: ReturnType<typeof vi.fn>;
@@ -66,9 +66,16 @@ describe("AuditService", () => {
 		};
 
 		service = new AuditService(
-			mockLogger as unknown as ConstructorParameters<typeof AuditService>[0],
-			mockStorage as unknown as ConstructorParameters<typeof AuditService>[1],
-			mockEvents as unknown as ConstructorParameters<typeof AuditService>[2],
+			mockLogger as unknown as ConstructorParameters<
+				typeof AuditService<typeof testConfig>
+			>[0],
+			testConfig,
+			mockStorage as unknown as ConstructorParameters<
+				typeof AuditService<typeof testConfig>
+			>[2],
+			mockEvents as unknown as ConstructorParameters<
+				typeof AuditService<typeof testConfig>
+			>[3],
 		);
 	});
 
@@ -80,8 +87,13 @@ describe("AuditService", () => {
 
 		it("should allow null events", () => {
 			const serviceWithoutEvents = new AuditService(
-				mockLogger as unknown as ConstructorParameters<typeof AuditService>[0],
-				mockStorage as unknown as ConstructorParameters<typeof AuditService>[1],
+				mockLogger as unknown as ConstructorParameters<
+					typeof AuditService<typeof testConfig>
+				>[0],
+				testConfig,
+				mockStorage as unknown as ConstructorParameters<
+					typeof AuditService<typeof testConfig>
+				>[2],
 				null,
 			);
 
@@ -90,8 +102,13 @@ describe("AuditService", () => {
 
 		it("should allow undefined events when explicitly passed", () => {
 			const serviceWithUndefined = new AuditService(
-				mockLogger as unknown as ConstructorParameters<typeof AuditService>[0],
-				mockStorage as unknown as ConstructorParameters<typeof AuditService>[1],
+				mockLogger as unknown as ConstructorParameters<
+					typeof AuditService<typeof testConfig>
+				>[0],
+				testConfig,
+				mockStorage as unknown as ConstructorParameters<
+					typeof AuditService<typeof testConfig>
+				>[2],
 				undefined,
 			);
 
@@ -308,8 +325,13 @@ describe("AuditService", () => {
 
 		it("should not call events.upserted when events is null", async () => {
 			const serviceWithoutEvents = new AuditService(
-				mockLogger as unknown as ConstructorParameters<typeof AuditService>[0],
-				mockStorage as unknown as ConstructorParameters<typeof AuditService>[1],
+				mockLogger as unknown as ConstructorParameters<
+					typeof AuditService<typeof testConfig>
+				>[0],
+				testConfig,
+				mockStorage as unknown as ConstructorParameters<
+					typeof AuditService<typeof testConfig>
+				>[2],
 				null,
 			);
 

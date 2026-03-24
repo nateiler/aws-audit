@@ -4,4 +4,5 @@ export type CDKConfig = {
 		account: string;
 		region: string;
 	};
+	service?: string;
 };

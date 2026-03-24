@@ -1,5 +1,3 @@
-import { SERVICE } from "./config.js";
-
 /**
  * Identifier key used in CloudWatch structured logs to mark audit entries.
  *
@@ -23,6 +21,9 @@ export const AUDIT_LOG_IDENTIFIER = "_audit";
 type NameConfig = {
 	/** Environment name (e.g., 'dev', 'staging', 'prod') */
 	env: string;
+
+	/** Service name used in naming resources */
+	service?: string;
 };
 
 /**
@@ -60,9 +61,9 @@ export const DynamoDB = {
 	/** Table name and ARN generators */
 	Table: {
 		/** Generates the DynamoDB table name based on environment */
-		Name: (config?: NameConfig) => buildDynamoDBName(SERVICE, config),
+		Name: (config?: NameConfig) => buildDynamoDBName(config),
 		/** Generates the full DynamoDB table ARN */
-		ARN: (config?: ARNConfig) => buildDynamoDBArn(SERVICE, config),
+		ARN: (config?: ARNConfig) => buildDynamoDBArn(config),
 	},
 	/** DynamoDB key attribute names */
 	Keys: {
@@ -116,12 +117,12 @@ export const DynamoDB = {
  * @internal
  */
 function buildDynamoDBName(
-	name?: string,
 	config: NameConfig = {
 		env: String(process.env.ENVIRONMENT),
+		service: process.env.SERVICE,
 	},
 ): string {
-	return [`${config.env.toUpperCase()}`, name, "Audit"]
+	return [`${config.env.toUpperCase()}`, config.service, "Audit"]
 		.filter(Boolean)
 		.join("-");
 }
@@ -135,16 +136,16 @@ function buildDynamoDBName(
  * @internal
  */
 function buildDynamoDBArn(
-	name?: string,
 	config: ARNConfig = {
 		aws: {
 			region: String(process.env.AWS_REGION),
 			account: String(process.env.AWS_ACCOUNT),
 		},
 		env: String(process.env.ENVIRONMENT),
+		service: process.env.SERVICE,
 	},
 ): string {
-	return `arn:aws:dynamodb:${config.aws.region}:${config.aws.account}:table/${buildDynamoDBName(name, { env: config.env })}`;
+	return `arn:aws:dynamodb:${config.aws.region}:${config.aws.account}:table/${buildDynamoDBName({ env: config.env, service: config.service })}`;
 }
 
 /**
@@ -171,9 +172,9 @@ export const EventBridge = {
 	/** Event bus name and ARN generators */
 	Bus: {
 		/** Generates the EventBridge bus name based on environment */
-		Name: (config?: NameConfig) => buildEventBridgeName(SERVICE, config),
+		Name: (config?: NameConfig) => buildEventBridgeName(config),
 		/** Generates the full EventBridge bus ARN */
-		ARN: (config?: ARNConfig) => buildEventBridgeArn(SERVICE, config),
+		ARN: (config?: ARNConfig) => buildEventBridgeArn(config),
 	},
 	/** Source identifier for audit events */
 	Source: "Audit",
@@ -203,12 +204,12 @@ export type AnyEventBridgeDetailType =
  * @internal
  */
 function buildEventBridgeName(
-	name?: string,
 	config: NameConfig = {
 		env: String(process.env.ENVIRONMENT),
+		service: process.env.SERVICE,
 	},
 ): string {
-	return [`${config.env.toUpperCase()}`, name, "Audit"]
+	return [`${config.env.toUpperCase()}`, config.service, "Audit"]
 		.filter(Boolean)
 		.join("-");
 }
@@ -222,14 +223,14 @@ function buildEventBridgeName(
  * @internal
  */
 function buildEventBridgeArn(
-	name?: string,
 	config: ARNConfig = {
 		aws: {
 			region: process.env.AWS_REGION ?? "us-east-1",
 			account: String(process.env.AWS_ACCOUNT),
 		},
 		env: String(process.env.ENVIRONMENT),
+		service: process.env.SERVICE,
 	},
 ): string {
-	return `arn:aws:events:${config.aws.region}:${config.aws.account}:event-bus/${buildEventBridgeName(name, { env: config.env })}`;
+	return `arn:aws:events:${config.aws.region}:${config.aws.account}:event-bus/${buildEventBridgeName({ env: config.env, service: config.service })}`;
 }

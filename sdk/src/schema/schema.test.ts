@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import * as z from "zod/v4";
-import { App, ResourceType } from "../config.js";
+import { App, ResourceType } from "../test-config.js";
 import {
 	AuditListItemPayloadSchema,
 	AuditPayloadSchema,

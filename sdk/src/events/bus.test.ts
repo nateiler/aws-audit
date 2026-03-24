@@ -1,8 +1,8 @@
 import type { Logger } from "@aws-lambda-powertools/logger";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { App, ResourceType } from "../config.js";
 import { EventBridge } from "../constants.js";
 import type { UpsertAudit } from "../schema/service.js";
+import { App, ResourceType } from "../test-config.js";
 // Import from index.ts to ensure barrel file coverage
 import { AuditEventBus, type BatchHandler } from "./index.js";
 

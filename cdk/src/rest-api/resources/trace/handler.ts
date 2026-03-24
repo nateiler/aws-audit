@@ -2,6 +2,7 @@ import { Router } from "@aws-lambda-powertools/event-handler/http";
 import { Logger } from "@aws-lambda-powertools/logger";
 import { AuditService } from "@nateiler/aws-audit-sdk";
 import type { Context } from "aws-lambda";
+import { type App, auditConfig } from "../../../audit-config.js";
 import { API_RESOURCE } from "./constants.js";
 import { PathSchema, QuerySchema, ResponseSchema } from "./schema.js";
 
@@ -11,7 +12,7 @@ const logger = new Logger({
 
 const app = new Router();
 
-const audits = new AuditService(logger);
+const audits = new AuditService(logger, auditConfig);
 
 app.get(
 	`/${API_RESOURCE.RESOURCE}/:${API_RESOURCE.RESOURCE}`,
@@ -30,7 +31,7 @@ app.get(
 		return audits.listTraceItems(
 			{
 				trace: traceId,
-				app: query["filter[app]"],
+				app: query["filter[app]"] as App | undefined,
 			},
 			pagination,
 		);

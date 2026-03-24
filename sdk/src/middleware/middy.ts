@@ -3,7 +3,6 @@ import type {
 	MiddyLikeRequest,
 } from "@aws-lambda-powertools/commons/types";
 import type { Audits } from "../audits.js";
-import { SERVICE } from "../config.js";
 
 /**
  * Creates a Middy.js middleware for automatic audit log management.
@@ -19,7 +18,7 @@ import { SERVICE } from "../config.js";
  * - **OnError hook**: Same as after hook - ensures audits are published even
  *   when the handler throws an error
  *
- * The cleanup function is stored at `{service}.audits` in `request.internal`,
+ * The cleanup function is stored at `audits` in `request.internal`,
  * following the Powertools convention for middleware coordination.
  *
  * @param handler - The Audits instance to use for audit management
@@ -71,7 +70,7 @@ const logAudits = (handler: Audits): MiddlewareLikeObj => {
 	const setCleanupFunction = (request: MiddyLikeRequest): void => {
 		request.internal = {
 			...request.internal,
-			[`${SERVICE.toLowerCase()}.audits`]: afterOrError,
+			["audits"]: afterOrError,
 		};
 	};
 

@@ -1,7 +1,6 @@
 import * as url from "node:url";
 import type { CDKConfig } from "@nateiler/aws-audit-cdk";
 import { ESMNodeFunctionFactory } from "@nateiler/aws-audit-cdk/lib";
-import { SERVICE } from "@nateiler/aws-audit-sdk";
 import * as apigateway from "aws-cdk-lib/aws-apigateway";
 import type * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import type * as events from "aws-cdk-lib/aws-events";
@@ -24,7 +23,7 @@ export default class extends Construct {
 		const ref = [
 			props.config.env.toUpperCase(),
 			"REST-API",
-			SERVICE,
+			props.config.service,
 			"Resource-Rerun",
 		].join("-");
 
@@ -40,9 +39,7 @@ export default class extends Construct {
 		});
 
 		// Logger / Metrics / Tracing
-		lambda
-			.addEnvironment("POWERTOOLS_METRICS_NAMESPACE", SERVICE)
-			.addEnvironment("POWERTOOLS_SERVICE_NAME", "ResourceRerun");
+		lambda.addEnvironment("POWERTOOLS_SERVICE_NAME", "ResourceRerun");
 
 		// Audit
 		props.table.grantReadWriteData(lambda);

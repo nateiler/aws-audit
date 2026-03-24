@@ -1,5 +1,4 @@
 import type { CDKConfig } from "@nateiler/aws-audit-cdk";
-import { SERVICE } from "@nateiler/aws-audit-sdk";
 import * as apigateway from "aws-cdk-lib/aws-apigateway";
 import type * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import type * as events from "aws-cdk-lib/aws-events";
@@ -19,7 +18,11 @@ export default class extends Construct {
 		super(scope, id);
 
 		const restApi = new apigateway.RestApi(this, "RESTApi", {
-			restApiName: [props.config.env.toUpperCase(), SERVICE, "Audit"].join("-"),
+			restApiName: [
+				props.config.env.toUpperCase(),
+				props.config.service,
+				"Audit",
+			].join("-"),
 			disableExecuteApiEndpoint: false,
 			deployOptions: {
 				stageName: STAGE_NAME_V1,

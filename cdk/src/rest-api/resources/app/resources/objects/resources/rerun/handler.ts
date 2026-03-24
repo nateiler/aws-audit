@@ -5,13 +5,16 @@ import {
 import { Logger } from "@aws-lambda-powertools/logger";
 import { EventBridgeClient } from "@aws-sdk/client-eventbridge";
 import {
-	type AnyApp,
-	type AnyResourceType,
 	AuditService,
 	BatchHandler,
 	EventBridge,
 } from "@nateiler/aws-audit-sdk";
 import type { Context } from "aws-lambda";
+import {
+	type App,
+	auditConfig,
+	type ResourceType,
+} from "../../../../../../../audit-config.js";
 import { API_RESOURCE as BASE_API_RESOURCE } from "../../../../constants.js";
 import { API_RESOURCE as ITEM_API_RESOURCE } from "../../constants.js";
 import { API_RESOURCE } from "./constants.js";
@@ -23,7 +26,7 @@ const logger = new Logger({
 
 const app = new Router();
 
-const audits = new AuditService(logger);
+const audits = new AuditService(logger, auditConfig);
 const eventBus = new BatchHandler(
 	logger,
 	new EventBridgeClient({ logger: logger }),
@@ -39,8 +42,8 @@ app.post(
 		} = reqCtx.valid.req.path;
 
 		const item = await audits.getItem({
-			app: appId as AnyApp,
-			resourceType: resourceType as AnyResourceType,
+			app: appId as App,
+			resourceType: resourceType as ResourceType,
 			id: auditId,
 		});
 

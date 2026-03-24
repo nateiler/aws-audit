@@ -2,9 +2,9 @@ import { EventType } from "@aws-lambda-powertools/batch";
 import type { SQSRecord } from "aws-lambda";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Audits } from "../audits.js";
-import { App, ResourceType } from "../config.js";
 import type { LogAuditInput } from "../schema/log.js";
 import { Status } from "../schema/log.js";
+import { App, ResourceType } from "../test-config.js";
 // Import from index.ts to ensure barrel file coverage
 import { AuditBatchProcessor, type MessageWithAuditOverride } from "./index.js";
 

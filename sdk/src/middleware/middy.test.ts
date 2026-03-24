@@ -1,7 +1,6 @@
 import type { MiddyLikeRequest } from "@aws-lambda-powertools/commons/types";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Audits } from "../audits.js";
-import { SERVICE } from "../config.js";
 import { logAudits } from "./middy.js";
 
 describe("logAudits middleware", () => {
@@ -52,7 +51,7 @@ describe("logAudits middleware", () => {
 
 			await middleware.before!(mockRequest);
 
-			const cleanupKey = `${SERVICE.toLowerCase()}.audits`;
+			const cleanupKey = `audits`;
 			expect(mockRequest.internal).toHaveProperty(cleanupKey);
 			expect(typeof mockRequest.internal[cleanupKey]).toBe("function");
 		});
@@ -67,7 +66,7 @@ describe("logAudits middleware", () => {
 				"existingKey",
 				"existingValue",
 			);
-			const cleanupKey = `${SERVICE.toLowerCase()}.audits`;
+			const cleanupKey = `audits`;
 			expect(mockRequest.internal).toHaveProperty(cleanupKey);
 		});
 
@@ -77,7 +76,7 @@ describe("logAudits middleware", () => {
 
 			await middleware.before!(mockRequest);
 
-			const cleanupKey = `${SERVICE.toLowerCase()}.audits`;
+			const cleanupKey = `audits`;
 			expect(mockRequest.internal).toHaveProperty(cleanupKey);
 		});
 	});
@@ -147,7 +146,7 @@ describe("logAudits middleware", () => {
 			const middleware = logAudits(mockAudits as unknown as Audits);
 			await middleware.before!(mockRequest);
 
-			const cleanupKey = `${SERVICE.toLowerCase()}.audits`;
+			const cleanupKey = `audits`;
 			const cleanup = mockRequest.internal[cleanupKey] as (
 				request: MiddyLikeRequest,
 			) => Promise<void>;
@@ -163,7 +162,7 @@ describe("logAudits middleware", () => {
 			await middleware.before!(mockRequest);
 
 			// Simulate another middleware calling the cleanup function directly
-			const cleanupKey = `${SERVICE.toLowerCase()}.audits`;
+			const cleanupKey = `audits`;
 			const cleanup = mockRequest.internal[cleanupKey] as (
 				request: MiddyLikeRequest,
 			) => Promise<void>;
@@ -185,7 +184,7 @@ describe("logAudits middleware", () => {
 			// Before hook
 			await middleware.before!(mockRequest);
 
-			const cleanupKey = `${SERVICE.toLowerCase()}.audits`;
+			const cleanupKey = `audits`;
 			expect(mockRequest.internal).toHaveProperty(cleanupKey);
 
 			// After hook

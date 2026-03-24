@@ -1,5 +1,4 @@
 import * as z from "zod/v4";
-import { App, ResourceType } from "../config.js";
 import { Status } from "./log.js";
 import { EventBridgeEventSchema } from "./model.js";
 
@@ -27,14 +26,16 @@ const TierSchema = z.number().int().gte(1).lte(3);
 const StatusSchema = z.enum(Object.values(Status));
 
 /**
- * Schema for application identifiers
+ * Schema for application identifiers.
+ * Accepts any string; use config.schemas.app for strict validation.
  */
-const AppSchema = z.enum(Object.values(App));
+const AppSchema = z.string();
 
 /**
- * Schema for resource type identifiers
+ * Schema for resource type identifiers.
+ * Accepts any string; use config.schemas.resourceType for strict validation.
  */
-const ResourceTypeSchema = z.enum(Object.values(ResourceType));
+const ResourceTypeSchema = z.string();
 
 /**
  * Schema for referencing a resource within an application

@@ -2,14 +2,14 @@ import {
 	AuditPayloadSchema,
 	PaginationCollectionSchema,
 } from "@nateiler/aws-audit-sdk";
-import { App, ResourceType } from "@nateiler/aws-audit-sdk/config";
 import { z } from "zod";
+import { auditConfig } from "../../../../../audit-config.js";
 import { API_RESOURCE as BASE_API_RESOURCE } from "../../constants.js";
 import { API_RESOURCE } from "./constants.js";
 
 export const PathSchema = z.object({
-	[BASE_API_RESOURCE.RESOURCE_WILDCARD]: z.enum(App),
-	[API_RESOURCE.RESOURCE_WILDCARD]: z.enum(ResourceType),
+	[BASE_API_RESOURCE.RESOURCE_WILDCARD]: auditConfig.schemas.app,
+	[API_RESOURCE.RESOURCE_WILDCARD]: auditConfig.schemas.resourceType,
 	[API_RESOURCE.RESOURCE_WILDCARD_ITEM]: z.string(),
 });
 

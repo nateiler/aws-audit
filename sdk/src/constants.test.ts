@@ -56,23 +56,31 @@ describe("constants", () => {
 
 		describe("Table.Name", () => {
 			it("should generate table name with custom config", () => {
-				const name = DynamoDB.Table.Name({ env: "prod" });
+				const name = DynamoDB.Table.Name({ env: "prod", service: "v1" });
 				expect(name).toBe("PROD-v1-Audit");
 			});
 
 			it("should uppercase environment", () => {
-				const name = DynamoDB.Table.Name({ env: "staging" });
+				const name = DynamoDB.Table.Name({ env: "staging", service: "v1" });
 				expect(name).toBe("STAGING-v1-Audit");
 			});
 
 			it("should use process.env.ENVIRONMENT when no config provided", () => {
 				const originalEnv = process.env.ENVIRONMENT;
+				const originalService = process.env.SERVICE;
 				process.env.ENVIRONMENT = "test";
+				process.env.SERVICE = "v1";
 
 				const name = DynamoDB.Table.Name();
 				expect(name).toBe("TEST-v1-Audit");
 
 				process.env.ENVIRONMENT = originalEnv;
+				process.env.SERVICE = originalService;
+			});
+
+			it("should omit service from name when not provided", () => {
+				const name = DynamoDB.Table.Name({ env: "prod" });
+				expect(name).toBe("PROD-Audit");
 			});
 		});
 
@@ -80,6 +88,7 @@ describe("constants", () => {
 			it("should generate full ARN with custom config", () => {
 				const arn = DynamoDB.Table.ARN({
 					env: "prod",
+					service: "v1",
 					aws: {
 						region: "us-west-2",
 						account: "123456789012",
@@ -95,10 +104,12 @@ describe("constants", () => {
 				const originalRegion = process.env.AWS_REGION;
 				const originalAccount = process.env.AWS_ACCOUNT;
 				const originalEnv = process.env.ENVIRONMENT;
+				const originalService = process.env.SERVICE;
 
 				process.env.AWS_REGION = "eu-west-1";
 				process.env.AWS_ACCOUNT = "987654321098";
 				process.env.ENVIRONMENT = "dev";
+				process.env.SERVICE = "v1";
 
 				const arn = DynamoDB.Table.ARN();
 				expect(arn).toBe(
@@ -108,6 +119,7 @@ describe("constants", () => {
 				process.env.AWS_REGION = originalRegion;
 				process.env.AWS_ACCOUNT = originalAccount;
 				process.env.ENVIRONMENT = originalEnv;
+				process.env.SERVICE = originalService;
 			});
 		});
 	});
@@ -138,23 +150,26 @@ describe("constants", () => {
 
 		describe("Bus.Name", () => {
 			it("should generate bus name with custom config", () => {
-				const name = EventBridge.Bus.Name({ env: "prod" });
+				const name = EventBridge.Bus.Name({ env: "prod", service: "v1" });
 				expect(name).toBe("PROD-v1-Audit");
 			});
 
 			it("should uppercase environment", () => {
-				const name = EventBridge.Bus.Name({ env: "staging" });
+				const name = EventBridge.Bus.Name({ env: "staging", service: "v1" });
 				expect(name).toBe("STAGING-v1-Audit");
 			});
 
 			it("should use process.env.ENVIRONMENT when no config provided", () => {
 				const originalEnv = process.env.ENVIRONMENT;
+				const originalService = process.env.SERVICE;
 				process.env.ENVIRONMENT = "test";
+				process.env.SERVICE = "v1";
 
 				const name = EventBridge.Bus.Name();
 				expect(name).toBe("TEST-v1-Audit");
 
 				process.env.ENVIRONMENT = originalEnv;
+				process.env.SERVICE = originalService;
 			});
 		});
 
@@ -162,6 +177,7 @@ describe("constants", () => {
 			it("should generate full ARN with custom config", () => {
 				const arn = EventBridge.Bus.ARN({
 					env: "prod",
+					service: "v1",
 					aws: {
 						region: "us-west-2",
 						account: "123456789012",
@@ -177,10 +193,12 @@ describe("constants", () => {
 				const originalRegion = process.env.AWS_REGION;
 				const originalAccount = process.env.AWS_ACCOUNT;
 				const originalEnv = process.env.ENVIRONMENT;
+				const originalService = process.env.SERVICE;
 
 				process.env.AWS_REGION = "eu-west-1";
 				process.env.AWS_ACCOUNT = "987654321098";
 				process.env.ENVIRONMENT = "dev";
+				process.env.SERVICE = "v1";
 
 				const arn = EventBridge.Bus.ARN();
 				expect(arn).toBe(
@@ -190,16 +208,19 @@ describe("constants", () => {
 				process.env.AWS_REGION = originalRegion;
 				process.env.AWS_ACCOUNT = originalAccount;
 				process.env.ENVIRONMENT = originalEnv;
+				process.env.SERVICE = originalService;
 			});
 
 			it("should default region to us-east-1 when AWS_REGION is undefined", () => {
 				const originalRegion = process.env.AWS_REGION;
 				const originalAccount = process.env.AWS_ACCOUNT;
 				const originalEnv = process.env.ENVIRONMENT;
+				const originalService = process.env.SERVICE;
 
 				delete process.env.AWS_REGION;
 				process.env.AWS_ACCOUNT = "111222333444";
 				process.env.ENVIRONMENT = "qa";
+				process.env.SERVICE = "v1";
 
 				const arn = EventBridge.Bus.ARN();
 				expect(arn).toBe(
@@ -209,6 +230,7 @@ describe("constants", () => {
 				process.env.AWS_REGION = originalRegion;
 				process.env.AWS_ACCOUNT = originalAccount;
 				process.env.ENVIRONMENT = originalEnv;
+				process.env.SERVICE = originalService;
 			});
 		});
 	});

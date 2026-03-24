@@ -1,5 +1,5 @@
-import { App } from "@nateiler/aws-audit-sdk/config";
 import { describe, expect, it } from "vitest";
+import { App } from "../../../audit-config.js";
 import { PathSchema, QuerySchema, ResponseSchema } from "./schema.js";
 
 describe("trace handler schemas", () => {

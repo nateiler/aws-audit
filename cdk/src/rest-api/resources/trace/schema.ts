@@ -2,8 +2,8 @@ import {
 	AuditPayloadSchema,
 	PaginationCollectionSchema,
 } from "@nateiler/aws-audit-sdk";
-import { App } from "@nateiler/aws-audit-sdk/config";
 import { z } from "zod";
+import { auditConfig } from "../../../audit-config.js";
 import { API_RESOURCE } from "./constants.js";
 
 export const PathSchema = z.object({
@@ -14,7 +14,7 @@ export const PathSchema = z.object({
 export const QuerySchema = z.object({
 	"pagination[pageSize]": z.coerce.number().optional(),
 	"pagination[nextToken]": z.string().optional(),
-	"filter[app]": z.enum(App).optional(),
+	"filter[app]": auditConfig.schemas.app.optional(),
 });
 
 export const ResponseSchema = PaginationCollectionSchema(AuditPayloadSchema);

@@ -50,6 +50,10 @@ export const ESMNodeFunctionFactory =
 			},
 		});
 
+		if (config.service) {
+			nodejsFunction.addEnvironment("SERVICE", config.service);
+		}
+
 		nodejsFunction.addLayers(
 			lambda.LayerVersion.fromLayerVersionArn(
 				scope,

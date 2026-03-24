@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { App, ResourceType } from "./config.js";
 import { AUDIT_LOG_IDENTIFIER } from "./constants.js";
 import type { LogAuditInput } from "./schema/log.js";
+import { App, ResourceType } from "./test-config.js";
 
 // Helper to create a valid audit item
 function createAuditItem(

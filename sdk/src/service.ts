@@ -1,31 +1,91 @@
 import type { Logger } from "@aws-lambda-powertools/logger";
+import type { AuditConfig } from "./config.js";
 import { AuditEventBus } from "./events/bus.js";
-import {
-	AuditRepository,
-	type Identifiers,
-	type ListItemsOptions,
-	type ListTraceItems,
-} from "./repository.js";
+import { AuditRepository } from "./repository.js";
 import type { Audit } from "./schema/audit.js";
 import type { Pagination } from "./schema/model.js";
 import { type UpsertAuditInput, UpsertAuditSchema } from "./schema/service.js";
+import type { InferApp, InferResourceType } from "./types.js";
 import { generateAuditId } from "./utils.js";
 
 /**
- * High-level service for managing audit records.
+ * Typed identifiers for locating audit records.
+ * Uses config-derived App and ResourceType types for strict typing.
+ */
+export type TypedIdentifiers<C extends AuditConfig> = {
+	/** Tenant/organization identifier for multi-tenancy support (optional) */
+	tenantId?: string;
+	/** Unique audit record identifier */
+	id: string | number;
+	/** Application that owns this audit record */
+	app: InferApp<C>;
+	/** Optional resource identifier within the application */
+	resourceId?: string | number;
+	/** Type of resource being audited */
+	resourceType: InferResourceType<C>;
+};
+
+/**
+ * Typed options for listing audit items by resource.
+ * Uses config-derived App and ResourceType types for strict typing.
+ */
+export type TypedListItemsOptions<C extends AuditConfig> = {
+	/** Tenant/organization identifier for multi-tenancy support (optional) */
+	tenantId?: string;
+	/** Resource identification */
+	resource: {
+		/** Type of the resource */
+		type: InferResourceType<C>;
+		/** Unique identifier of the resource */
+		id: string;
+	};
+	/** Application owning the resource */
+	app: InferApp<C>;
+};
+
+/**
+ * Typed options for listing audit items by trace ID.
+ * Uses config-derived App and ResourceType types for strict typing.
+ */
+export type TypedListTraceItems<C extends AuditConfig> = {
+	/** Tenant/organization identifier for multi-tenancy support (optional) */
+	tenantId?: string;
+	/** Trace ID to query for related audit records */
+	trace: string;
+	/** Optional application filter */
+	app?: InferApp<C>;
+	/** Optional resource filter */
+	resource?: {
+		/** Filter by resource type */
+		type?: InferResourceType<C>;
+		/** Filter by resource ID */
+		id?: string;
+	};
+};
+
+/**
+ * High-level service for managing audit records with typed App and ResourceType.
  *
  * Provides a business logic layer over the AuditRepository for CRUD operations
  * and coordinates with EventBridge for event-driven notifications.
  *
  * Features:
+ * - Type-safe app and resourceType parameters derived from config
  * - Automatic creation of related resource audit entries
  * - Schema validation on upsert operations
  * - EventBridge integration for audit event notifications
  * - Paginated list queries with filtering
  *
+ * @typeParam C - The audit config type for type inference
+ *
  * @example
  * ```typescript
- * const service = new AuditService(logger);
+ * const config = defineAuditConfig({
+ *   apps: ['Orders', 'Inventory'] as const,
+ *   resourceTypes: ['Order', 'Product'] as const,
+ * });
+ *
+ * const service = new AuditService(logger, config);
  *
  * // Upsert an audit with related resources
  * await service.upsertItem({
@@ -36,29 +96,35 @@ import { generateAuditId } from "./utils.js";
  *   ],
  * });
  *
- * // Retrieve a specific audit
+ * // Retrieve a specific audit - app and resourceType are typed!
  * const audit = await service.getItem({
  *   id: 'audit-123',
- *   app: 'Orders',
- *   resourceType: 'Order',
+ *   app: 'Orders',        // TypeScript knows valid values
+ *   resourceType: 'Order', // Autocomplete works
  * });
  * ```
  */
-export class AuditService {
+export class AuditService<C extends AuditConfig> {
+	private readonly storage: AuditRepository<C>;
+
 	/**
 	 * Creates a new AuditService instance.
 	 *
 	 * @param logger - Logger instance for error logging
+	 * @param config - Audit configuration for type inference
 	 * @param storage - Repository for DynamoDB operations (defaults to new AuditRepository)
 	 * @param events - EventBridge bus for audit notifications (defaults to new AuditEventBus, can be null/undefined to disable)
 	 */
 	constructor(
 		private readonly logger: Logger,
-		private readonly storage: AuditRepository = new AuditRepository(logger),
+		private readonly config: C,
+		storage?: AuditRepository<C>,
 		readonly events: null | undefined | AuditEventBus = new AuditEventBus(
 			logger,
 		),
-	) {}
+	) {
+		this.storage = storage ?? new AuditRepository(logger, config);
+	}
 
 	/**
 	 * Retrieves a single audit record by its identifiers.
@@ -77,7 +143,7 @@ export class AuditService {
 	 * ```
 	 */
 	public async getItem(
-		identifiers: Omit<Identifiers, "resourceId">,
+		identifiers: Omit<TypedIdentifiers<C>, "resourceId">,
 	): Promise<Audit> {
 		const result = await this.storage.getItem(identifiers);
 
@@ -159,11 +225,15 @@ export class AuditService {
 	 * @example
 	 * ```typescript
 	 * const { items, pagination } = await service.listItems({
-	 *   resource: { type: 'Order', id: '123', app: 'Orders' },
+	 *   resource: { type: 'Order', id: '123' },
+	 *   app: 'Orders',
 	 * });
 	 * ```
 	 */
-	public async listItems(params: ListItemsOptions, pagination?: Pagination) {
+	public async listItems(
+		params: TypedListItemsOptions<C>,
+		pagination?: Pagination,
+	) {
 		try {
 			return await this.storage.listItems(params, pagination);
 		} catch (error) {
@@ -193,7 +263,10 @@ export class AuditService {
 	 * });
 	 * ```
 	 */
-	public async listTraceItems(params: ListTraceItems, pagination?: Pagination) {
+	public async listTraceItems(
+		params: TypedListTraceItems<C>,
+		pagination?: Pagination,
+	) {
 		try {
 			return await this.storage.listTraceItems(params, pagination);
 		} catch (error) {

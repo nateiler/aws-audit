@@ -1,11 +1,12 @@
 import { Router } from "@aws-lambda-powertools/event-handler/http";
 import { Logger } from "@aws-lambda-powertools/logger";
-import {
-	type AnyApp,
-	type AnyResourceType,
-	AuditService,
-} from "@nateiler/aws-audit-sdk";
+import { AuditService } from "@nateiler/aws-audit-sdk";
 import type { Context } from "aws-lambda";
+import {
+	type App,
+	auditConfig,
+	type ResourceType,
+} from "../../../../../audit-config.js";
 import { API_RESOURCE as BASE_API_RESOURCE } from "../../constants.js";
 import { API_RESOURCE } from "./constants.js";
 import { PathSchema, QuerySchema, ResponseSchema } from "./schema.js";
@@ -16,7 +17,7 @@ const logger = new Logger({
 
 const app = new Router();
 
-const audits = new AuditService(logger);
+const audits = new AuditService(logger, auditConfig);
 
 app.get(
 	`/${BASE_API_RESOURCE.RESOURCE}/:${BASE_API_RESOURCE.RESOURCE_WILDCARD}/${API_RESOURCE.RESOURCE}/:${API_RESOURCE.RESOURCE_WILDCARD}/:${API_RESOURCE.RESOURCE_WILDCARD_ITEM}`,
@@ -39,10 +40,10 @@ app.get(
 		return audits.listItems(
 			{
 				resource: {
-					type: objectType as AnyResourceType,
+					type: objectType as ResourceType,
 					id: itemId,
 				},
-				app: appId as AnyApp,
+				app: appId as App,
 			},
 			pagination,
 		);

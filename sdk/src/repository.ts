@@ -8,6 +8,7 @@ import {
 } from "@aws-sdk/client-dynamodb";
 import type { NativeAttributeValue } from "@aws-sdk/util-dynamodb";
 import { marshall, unmarshall } from "@aws-sdk/util-dynamodb";
+import type { AuditConfig } from "./config.js";
 import { DynamoDB } from "./constants.js";
 import {
 	decodeNextPageToken,
@@ -22,7 +23,12 @@ import {
 import { type Pagination, PaginationCollectionSchema } from "./schema/model.js";
 import type { UpsertAuditInput } from "./schema/service.js";
 import { type AuditStorage, AuditStorageSchema } from "./schema/storage.js";
-import type { AnyApp, AnyResourceType } from "./types.js";
+import type {
+	AnyApp,
+	AnyResourceType,
+	InferApp,
+	InferResourceType,
+} from "./types.js";
 import { getTraceParts } from "./utils.js";
 
 /**
@@ -46,10 +52,13 @@ export type UnmarshalledAttributes = { [key: string]: NativeAttributeValue };
 
 /** Resource type alias for DynamoDB key construction */
 type ResourceType = AnyResourceType;
+
 /** Resource identifier string type */
 type ResourceId = string;
+
 /** Audit record identifier type */
 type Id = string;
+
 /** Trace identifier type for distributed tracing */
 type TraceId = string;
 
@@ -58,8 +67,10 @@ type TenantId = string;
 
 /** DynamoDB partition key base format: {app}.{resourceType} */
 type PKBase = `${AnyApp}.${ResourceType}`;
+
 /** DynamoDB partition key format: optionally prefixed with {tenantId}# */
 type PK = PKBase | `${TenantId}#${PKBase}`;
+
 /** DynamoDB sort key format: {id} */
 type SK = `${Id}`;
 
@@ -120,6 +131,23 @@ export type Identifiers = {
 };
 
 /**
+ * Generic identifiers with typed App and ResourceType from config.
+ * @typeParam C - The audit config type for type inference
+ */
+export type TypedIdentifiers<C extends AuditConfig> = {
+	/** Tenant/organization identifier for multi-tenancy support (optional) */
+	tenantId?: string;
+	/** Unique audit record identifier */
+	id: string | number;
+	/** Application that owns this audit record */
+	app: InferApp<C>;
+	/** Optional resource identifier within the application */
+	resourceId?: string | number;
+	/** Type of resource being audited */
+	resourceType: InferResourceType<C>;
+};
+
+/**
  * Combined secondary key structure for DynamoDB indexes.
  * Includes GSI keys for both string-string and string-number indexes,
  * plus LSI sort key for tier-based sorting.
@@ -163,47 +191,40 @@ type ListingItem = TraceListingItem &
 	Pick<SecondaryKeys, "GSI1_SS_PK" | "GSI1_SS_SK">;
 
 /**
- * Parameters for listing items by resource.
- * @internal
+ * Options for listing audit items by resource with typed App and ResourceType.
+ * @typeParam C - The audit config type for type inference
  */
-type ListResourceItems = {
+export type TypedListItemsOptions<C extends AuditConfig> = {
+	/** Tenant/organization identifier for multi-tenancy support (optional) */
+	tenantId?: string;
 	/** Resource identification */
 	resource: {
 		/** Type of the resource */
-		type: ResourceType;
+		type: InferResourceType<C>;
 		/** Unique identifier of the resource */
-		id: ResourceId;
+		id: string;
 	};
 	/** Application owning the resource */
-	app: AnyApp;
+	app: InferApp<C>;
 };
 
 /**
- * Options for listing audit items by resource.
- * Used with {@link AuditRepository.listItems}.
+ * Options for listing audit items by trace ID with typed App and ResourceType.
+ * @typeParam C - The audit config type for type inference
  */
-export type ListItemsOptions = ListResourceItems & {
-	/** Tenant/organization identifier for multi-tenancy support (optional) */
-	tenantId?: string;
-};
-
-/**
- * Options for listing audit items by trace ID.
- * Used with {@link AuditRepository.listTraceItems}.
- */
-export type ListTraceItems = {
+export type TypedListTraceItems<C extends AuditConfig> = {
 	/** Tenant/organization identifier for multi-tenancy support (optional) */
 	tenantId?: string;
 	/** Trace ID to query for related audit records */
 	trace: string;
 	/** Optional application filter */
-	app?: AnyApp;
+	app?: InferApp<C>;
 	/** Optional resource filter */
 	resource?: {
 		/** Filter by resource type */
-		type?: ResourceType;
+		type?: InferResourceType<C>;
 		/** Filter by resource ID */
-		id?: ResourceId;
+		id?: string;
 	};
 };
 
@@ -219,15 +240,21 @@ export type ListTraceItems = {
  * The repository uses a single-table design with composite keys and
  * multiple GSI/LSI indexes for efficient query patterns.
  *
+ * @typeParam C - The audit config type for type inference
+ *
  * @example
  * ```typescript
- * const repository = new AuditRepository(logger);
+ * const config = defineAuditConfig({
+ *   apps: ['Orders', 'Inventory'] as const,
+ *   resourceTypes: ['Order', 'Product'] as const,
+ * });
+ * const repository = new AuditRepository(logger, config);
  *
- * // Get a single audit record
+ * // Get a single audit record - typed!
  * const audit = await repository.getItem({
  *   id: 'audit-123',
- *   app: App.App1,
- *   resourceType: ResourceType.USER,
+ *   app: 'Orders',           // TypeScript knows valid values
+ *   resourceType: 'Order',   // Autocomplete works
  * });
  *
  * // Upsert multiple audit records
@@ -238,20 +265,22 @@ export type ListTraceItems = {
  *
  * // List audits for a specific resource
  * const { items, pagination } = await repository.listItems({
- *   app: App.App1,
- *   resource: { type: ResourceType.USER, id: 'user-123' },
+ *   app: 'Orders',
+ *   resource: { type: 'Order', id: 'user-123' },
  * });
  * ```
  */
-export class AuditRepository {
+export class AuditRepository<C extends AuditConfig> {
 	/**
 	 * Creates a new AuditRepository instance.
 	 *
 	 * @param logger - Logger instance for error reporting and debugging
+	 * @param config - Audit configuration for type inference
 	 * @param client - DynamoDB client (defaults to new instance with AWS_REGION from environment)
 	 */
 	public constructor(
 		private readonly logger: Logger,
+		private readonly config: C,
 		private readonly client: DynamoDBClient = new DynamoDBClient({
 			region: process.env.AWS_REGION ?? "us-east-1",
 			logger,
@@ -271,8 +300,8 @@ export class AuditRepository {
 	 * ```typescript
 	 * const audit = await repository.getItem({
 	 *   id: 'audit-123',
-	 *   app: App.App1,
-	 *   resourceType: ResourceType.USER,
+	 *   app: 'Orders',
+	 *   resourceType: 'Order',
 	 * });
 	 *
 	 * if (audit) {
@@ -281,7 +310,7 @@ export class AuditRepository {
 	 * ```
 	 */
 	public async getItem(
-		identifiers: Omit<Identifiers, "resourceId">,
+		identifiers: Omit<TypedIdentifiers<C>, "resourceId">,
 	): Promise<Audit | undefined> {
 		try {
 			const { Item: item } = await this.client.send(
@@ -415,18 +444,21 @@ export class AuditRepository {
 	 * ```typescript
 	 * // Get first page
 	 * const page1 = await repository.listItems({
-	 *   app: App.App1,
-	 *   resource: { type: ResourceType.USER, id: 'user-123' },
+	 *   app: 'Orders',
+	 *   resource: { type: 'Order', id: 'user-123' },
 	 * });
 	 *
 	 * // Get next page using the pagination token
 	 * const page2 = await repository.listItems(
-	 *   { app: App.App1, resource: { type: ResourceType.USER, id: 'user-123' } },
+	 *   { app: 'Orders', resource: { type: 'Order', id: 'user-123' } },
 	 *   { nextToken: page1.pagination?.nextToken },
 	 * );
 	 * ```
 	 */
-	public async listItems(params: ListItemsOptions, pagination?: Pagination) {
+	public async listItems(
+		params: TypedListItemsOptions<C>,
+		pagination?: Pagination,
+	) {
 		const startKey = decodeNextPageToken(pagination?.nextToken);
 
 		const pageSize = Number(pagination?.pageSize || 100);
@@ -494,12 +526,15 @@ export class AuditRepository {
 	 * // Filter by app and resource type
 	 * const filtered = await repository.listTraceItems({
 	 *   trace: 'trace-abc-123',
-	 *   app: App.App1,
-	 *   resource: { type: ResourceType.USER },
+	 *   app: 'Orders',
+	 *   resource: { type: 'Order' },
 	 * });
 	 * ```
 	 */
-	public async listTraceItems(params: ListTraceItems, pagination?: Pagination) {
+	public async listTraceItems(
+		params: TypedListTraceItems<C>,
+		pagination?: Pagination,
+	) {
 		const startKey = decodeNextPageToken(pagination?.nextToken);
 
 		const pageSize = Number(pagination?.pageSize || 100);

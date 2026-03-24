@@ -11,6 +11,7 @@ import {
 	LogAuditSchema,
 } from "@nateiler/aws-audit-sdk";
 import type { CloudWatchLogsEvent } from "aws-lambda";
+import { auditConfig } from "../audit-config.js";
 
 const logger = new Logger({
 	logRecordOrder: ["level", "message"],
@@ -22,7 +23,7 @@ type LogMessage = {
 	message: string;
 };
 
-const service = new AuditService(logger);
+const service = new AuditService(logger, auditConfig);
 
 const recordHandler = async (event: CloudWatchLogsEvent): Promise<void> => {
 	const records = extractDataFromEnvelope<Array<LogMessage>>(

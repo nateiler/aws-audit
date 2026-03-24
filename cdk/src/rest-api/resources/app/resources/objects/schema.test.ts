@@ -1,5 +1,5 @@
-import { App, ResourceType } from "@nateiler/aws-audit-sdk/config";
 import { describe, expect, it } from "vitest";
+import { App, ResourceType } from "../../../../../audit-config.js";
 import { PathSchema, QuerySchema, ResponseSchema } from "./schema.js";
 
 describe("objects handler schemas", () => {
