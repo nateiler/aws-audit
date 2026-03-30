@@ -1,6 +1,6 @@
 import type { APIGatewayProxyEventV2, Context } from "aws-lambda";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { App, ResourceType } from "../../../../../audit-config.js";
+import { App, ResourceType } from "../../../../../test-config.js";
 
 const { mockListItems } = vi.hoisted(() => ({
 	mockListItems: vi.fn(),
