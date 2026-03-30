@@ -26,27 +26,27 @@ export type AnyStatus = (typeof Status)[keyof typeof Status];
  * Schema for escalation tier values (1-3).
  * @internal
  */
-const TierSchema = z.number().int().gte(1).lte(3);
+export const TierSchema = z.number().int().gte(1).lte(3);
 
 /**
  * Schema for audit status enum values.
  * @internal
  */
-const StatusSchema = z.enum(Object.values(Status));
+export const StatusSchema = z.enum(Object.values(Status));
 
 /**
  * Schema for application identifier values.
  * Accepts any string; use config.schemas.app for strict validation.
  * @internal
  */
-const AppSchema = z.string();
+export const AppSchema = z.string();
 
 /**
  * Schema for resource type values.
  * Accepts any string; use config.schemas.resourceType for strict validation.
  * @internal
  */
-const ResourceTypeSchema = z.string();
+export const ResourceTypeSchema = z.string();
 
 /**
  * Schema for resource references (target/source).
@@ -54,7 +54,7 @@ const ResourceTypeSchema = z.string();
  * Identifies a resource within an application by app, type, and optional ID.
  * @internal
  */
-const ResourceReferenceSchema = z.object({
+export const ResourceReferenceSchema = z.object({
 	/** Application that owns this resource */
 	app: AppSchema,
 	/** Unique identifier within the resource type (optional) */
@@ -70,7 +70,7 @@ const ResourceReferenceSchema = z.object({
  * secondary resources to an audit entry.
  * @internal
  */
-const AdditionalResourceSchema = ResourceReferenceSchema.extend({
+export const AdditionalResourceSchema = ResourceReferenceSchema.extend({
 	id: z.union([z.string(), z.number()]).optional(),
 });
 
@@ -99,43 +99,24 @@ const recursiveValueSchema: z.ZodType<ContextValue> = z.union([
  * Schema for the context object - a flexible key-value store.
  * @internal
  */
-const ContextSchema = z.record(z.string(), recursiveValueSchema);
+export const ContextSchema = z.record(z.string(), recursiveValueSchema);
 
 /**
- * Schema for audit entries destined for CloudWatch Logs.
+ * Base schema for audit entries destined for CloudWatch Logs.
  *
- * This is the primary schema for creating audit log entries. It validates
- * and transforms input data into a consistent format for CloudWatch emission.
+ * @internal Use `createTypedLogAuditSchema` instead for type-safe validation
+ * with your config's app and resourceType enums.
+ *
+ * This schema accepts any string for app and resourceType values.
+ * For strict validation against configured values, use the factory function.
  *
  * **Transformations:**
  * - `resources`: Set is converted to Array
  * - `error`: Error instances are serialized to JSON strings
  * - `tier`: Defaults to 2 (INFO) if not provided
  * - `status`: Defaults to 'success' if not provided
- *
- * @example
- * ```typescript
- * const audit = LogAuditSchema.parse({
- *   operation: 'createUser',
- *   target: { app: 'MyApp', type: 'User', id: 'user-123' },
- *   status: 'success',
- *   context: { email: 'user@example.com' },
- * });
- * ```
- *
- * @example
- * ```typescript
- * // With error handling
- * const failedAudit = LogAuditSchema.parse({
- *   operation: 'processPayment',
- *   target: { app: 'Payments', type: 'Payment', id: 'pay-456' },
- *   status: 'fail',
- *   error: new Error('Payment declined'),
- * });
- * // error is now a JSON string: '{"name":"Error","message":"Payment declined"}'
- * ```
  */
-export const LogAuditSchema = z.object({
+export const _BaseLogAuditSchema = z.object({
 	/** Optional audit ID for retry correlation. If provided, retries with the same ID are correlated. */
 	id: z.string().optional(),
 	/** Name of the operation being audited (required) */
@@ -177,9 +158,68 @@ export const LogAuditSchema = z.object({
 });
 
 /**
- * Input type for LogAuditSchema.
+ * Input type for log audit schemas.
  *
  * Use this type when building audit objects before validation.
  * Accepts Error instances and Set for resources.
  */
-export type LogAuditInput = z.input<typeof LogAuditSchema>;
+export type LogAuditInput = z.input<typeof _BaseLogAuditSchema>;
+
+/**
+ * Creates a LogAuditSchema with typed app and resourceType schemas.
+ *
+ * Use this when you have a config with strict app/resourceType enums
+ * to get runtime validation against those specific values.
+ *
+ * @param resourceReferenceSchema - The typed resource reference schema from config.schemas.resourceReference
+ * @returns A LogAuditSchema that validates against the provided resource reference schema
+ *
+ * @example
+ * ```typescript
+ * const config = defineAuditConfig({
+ *   apps: ['Orders', 'Inventory'] as const,
+ *   resourceTypes: ['Order', 'Product'] as const,
+ * });
+ *
+ * const typedSchema = createTypedLogAuditSchema(config.schemas.resourceReference);
+ * typedSchema.parse({
+ *   operation: 'createOrder',
+ *   target: { app: 'Orders', type: 'Order', id: '123' },
+ * }); // Validates app/type against config
+ * ```
+ */
+export function createTypedLogAuditSchema<
+	T extends z.ZodObject<{
+		app: z.ZodTypeAny;
+		type: z.ZodTypeAny;
+		id: z.ZodTypeAny;
+	}>,
+>(resourceReferenceSchema: T) {
+	return z.object({
+		id: z.string().optional(),
+		operation: z.string(),
+		tenantId: z.string().optional(),
+		tier: TierSchema.default(2),
+		status: StatusSchema.default(Status.SUCCESS),
+		target: resourceReferenceSchema,
+		source: resourceReferenceSchema.optional(),
+		context: ContextSchema.optional(),
+		resources: z
+			.union([z.array(resourceReferenceSchema), z.set(resourceReferenceSchema)])
+			.optional()
+			.pipe(z.transform((val) => (val instanceof Set ? Array.from(val) : val))),
+		message: z.string().optional(),
+		trace: z.string().optional(),
+		event: EventBridgeEventSchema.optional(),
+		error: z
+			.union([z.string(), z.instanceof(Error)])
+			.optional()
+			.pipe(
+				z.transform((e) =>
+					e instanceof Error
+						? JSON.stringify(e, Object.getOwnPropertyNames(e))
+						: e,
+				),
+			),
+	});
+}

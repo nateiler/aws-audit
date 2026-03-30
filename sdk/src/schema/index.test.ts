@@ -1,11 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { App, ResourceType } from "../test-config.js";
+import { App, ResourceType, testConfig } from "../test-config.js";
 
 const createValidTarget = () => ({
 	app: App.App1,
 	type: ResourceType.UNKNOWN,
 	id: "resource-123",
 });
+
+const createTypedSchema = (index: typeof import("./index.js")) =>
+	index.createTypedLogAuditSchema(testConfig.schemas.resourceReference);
 
 describe("schema/index.ts exports", () => {
 	it("should export all audit schemas", async () => {
@@ -28,7 +31,7 @@ describe("schema/index.ts exports", () => {
 	it("should export log schemas and Status", async () => {
 		const index = await import("./index.js");
 
-		expect(index.LogAuditSchema).toBeDefined();
+		expect(index.createTypedLogAuditSchema).toBeDefined();
 		expect(index.Status).toBeDefined();
 		expect(index.Status.SUCCESS).toBe("success");
 		expect(index.Status.FAIL).toBe("fail");
@@ -59,7 +62,8 @@ describe("schema/index.ts exports", () => {
 		const index = await import("./index.js");
 
 		// Verify schemas work when imported from index
-		const result = index.LogAuditSchema.parse({
+		const typedSchema = createTypedSchema(index);
+		const result = typedSchema.parse({
 			operation: "testOp",
 			target: createValidTarget(),
 		});

@@ -4,7 +4,10 @@ import { AuditEventBus } from "./events/bus.js";
 import { AuditRepository } from "./repository.js";
 import type { Audit } from "./schema/audit.js";
 import type { Pagination } from "./schema/model.js";
-import { type UpsertAuditInput, UpsertAuditSchema } from "./schema/service.js";
+import {
+	createTypedUpsertAuditSchema,
+	type UpsertAuditInput,
+} from "./schema/service.js";
 import type { InferApp, InferResourceType } from "./types.js";
 
 /**
@@ -105,6 +108,7 @@ export type TypedListTraceItems<C extends AuditConfig> = {
  */
 export class AuditService<C extends AuditConfig> {
 	private readonly storage: AuditRepository<C>;
+	private readonly config: C;
 
 	/**
 	 * Creates a new AuditService instance.
@@ -116,12 +120,13 @@ export class AuditService<C extends AuditConfig> {
 	 */
 	constructor(
 		private readonly logger: Logger,
-		private readonly config: C,
+		config: C,
 		storage?: AuditRepository<C>,
 		readonly events: null | undefined | AuditEventBus = new AuditEventBus(
 			logger,
 		),
 	) {
+		this.config = config;
 		this.storage = storage ?? new AuditRepository(logger, config);
 	}
 
@@ -189,7 +194,10 @@ export class AuditService<C extends AuditConfig> {
 	 * ```
 	 */
 	public async upsertItem(input: UpsertAuditInput): Promise<void> {
-		const item = UpsertAuditSchema.parse(input);
+		const schema = createTypedUpsertAuditSchema(
+			this.config.schemas.resourceReference,
+		);
+		const item = schema.parse(input);
 		const now = new Date().toISOString();
 
 		// Build current attempt record

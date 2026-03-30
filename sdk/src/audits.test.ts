@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AUDIT_LOG_IDENTIFIER } from "./constants.js";
 import type { LogAuditInput } from "./schema/log.js";
-import { App, ResourceType } from "./test-config.js";
+import { App, ResourceType, testConfig } from "./test-config.js";
 
 // Helper to create a valid audit item
 function createAuditItem(
@@ -54,9 +54,9 @@ describe("Audits", () => {
 	}
 
 	describe("constructor", () => {
-		it("should create an instance with default options", async () => {
+		it("should create an instance with config", async () => {
 			const { Audits } = await import("./audits.js");
-			const audits = new Audits();
+			const audits = new Audits({ config: testConfig });
 
 			expect(audits).toBeInstanceOf(Audits);
 			expect(audits.logger).toBeDefined();
@@ -71,7 +71,7 @@ describe("Audits", () => {
 				debug: vi.fn(),
 			};
 
-			const audits = new Audits({ logger: customLogger });
+			const audits = new Audits({ config: testConfig, logger: customLogger });
 
 			expect(audits.logger).toBe(customLogger);
 		});
@@ -80,7 +80,7 @@ describe("Audits", () => {
 			process.env._X_AMZN_TRACE_ID = "Root=1-abc-def;Parent=123;Sampled=1";
 
 			const { Audits } = await import("./audits.js");
-			const audits = new Audits();
+			const audits = new Audits({ config: testConfig });
 
 			// Powertools extracts just the trace ID portion from the X-Ray header
 			expect(audits.traceId).toBe("1-abc-def");
@@ -88,7 +88,7 @@ describe("Audits", () => {
 
 		it("should have undefined traceId when not in X-Ray environment", async () => {
 			const { Audits } = await import("./audits.js");
-			const audits = new Audits();
+			const audits = new Audits({ config: testConfig });
 
 			expect(audits.traceId).toBeUndefined();
 		});
@@ -97,7 +97,7 @@ describe("Audits", () => {
 	describe("addAudit", () => {
 		it("should buffer audit entries", async () => {
 			const { Audits } = await import("./audits.js");
-			const audits = new Audits();
+			const audits = new Audits({ config: testConfig });
 			const item = createAuditItem();
 
 			audits.addAudit(item);
@@ -115,7 +115,7 @@ describe("Audits", () => {
 
 		it("should auto-flush when buffer reaches MAX_AUDITS_SIZE", async () => {
 			const { Audits } = await import("./audits.js");
-			const audits = new Audits();
+			const audits = new Audits({ config: testConfig });
 
 			// Add 20 items (MAX_AUDITS_SIZE)
 			for (let i = 0; i < 20; i++) {
@@ -136,7 +136,7 @@ describe("Audits", () => {
 	describe("publishStoredAudits", () => {
 		it("should emit audits as JSON to stdout when enabled", async () => {
 			const { Audits } = await import("./audits.js");
-			const audits = new Audits();
+			const audits = new Audits({ config: testConfig });
 			const item = createAuditItem();
 
 			audits.addAudit(item);
@@ -155,7 +155,7 @@ describe("Audits", () => {
 			process.env._X_AMZN_TRACE_ID = "trace-123";
 
 			const { Audits } = await import("./audits.js");
-			const audits = new Audits();
+			const audits = new Audits({ config: testConfig });
 
 			audits.addAudit(createAuditItem());
 			audits.publishStoredAudits();
@@ -170,7 +170,7 @@ describe("Audits", () => {
 			process.env._X_AMZN_TRACE_ID = "env-trace";
 
 			const { Audits } = await import("./audits.js");
-			const audits = new Audits();
+			const audits = new Audits({ config: testConfig });
 
 			audits.addAudit(createAuditItem({ trace: "custom-trace" }));
 			audits.publishStoredAudits();
@@ -183,7 +183,7 @@ describe("Audits", () => {
 
 		it("should clear buffer after publishing", async () => {
 			const { Audits } = await import("./audits.js");
-			const audits = new Audits();
+			const audits = new Audits({ config: testConfig });
 
 			audits.addAudit(createAuditItem());
 			audits.publishStoredAudits();
@@ -199,7 +199,7 @@ describe("Audits", () => {
 			process.env.POWERTOOLS_AUDITS_DISABLED = "true";
 
 			const { Audits } = await import("./audits.js");
-			const audits = new Audits();
+			const audits = new Audits({ config: testConfig });
 
 			audits.addAudit(createAuditItem());
 			audits.publishStoredAudits();
@@ -213,7 +213,7 @@ describe("Audits", () => {
 			delete process.env.POWERTOOLS_AUDITS_DISABLED;
 
 			const { Audits: Audits2 } = await import("./audits.js");
-			const enabledAudits = new Audits2();
+			const enabledAudits = new Audits2({ config: testConfig });
 			enabledAudits.addAudit(createAuditItem({ operation: "after-enable" }));
 			enabledAudits.publishStoredAudits();
 
@@ -222,7 +222,7 @@ describe("Audits", () => {
 
 		it("should handle multiple audits in one publish", async () => {
 			const { Audits } = await import("./audits.js");
-			const audits = new Audits();
+			const audits = new Audits({ config: testConfig });
 
 			audits.addAudit(createAuditItem({ operation: "op1" }));
 			audits.addAudit(createAuditItem({ operation: "op2" }));
@@ -241,13 +241,13 @@ describe("Audits", () => {
 			const { Audits } = await import("./audits.js");
 
 			// Create a testable subclass inline
-			class TestableAudits extends Audits {
+			class TestableAudits extends Audits<typeof testConfig> {
 				public testIsDisabled(): boolean {
 					return this.isDisabled();
 				}
 			}
 
-			const audits = new TestableAudits();
+			const audits = new TestableAudits({ config: testConfig });
 			expect(audits.testIsDisabled()).toBe(true);
 		});
 
@@ -256,13 +256,13 @@ describe("Audits", () => {
 
 			const { Audits } = await import("./audits.js");
 
-			class TestableAudits extends Audits {
+			class TestableAudits extends Audits<typeof testConfig> {
 				public testIsDisabled(): boolean {
 					return this.isDisabled();
 				}
 			}
 
-			const audits = new TestableAudits();
+			const audits = new TestableAudits({ config: testConfig });
 			expect(audits.testIsDisabled()).toBe(false);
 		});
 
@@ -271,13 +271,13 @@ describe("Audits", () => {
 
 			const { Audits } = await import("./audits.js");
 
-			class TestableAudits extends Audits {
+			class TestableAudits extends Audits<typeof testConfig> {
 				public testIsDisabled(): boolean {
 					return this.isDisabled();
 				}
 			}
 
-			const audits = new TestableAudits();
+			const audits = new TestableAudits({ config: testConfig });
 			expect(audits.testIsDisabled()).toBe(true);
 		});
 
@@ -285,13 +285,13 @@ describe("Audits", () => {
 			// Neither POWERTOOLS_AUDITS_DISABLED nor POWERTOOLS_DEV is set
 			const { Audits } = await import("./audits.js");
 
-			class TestableAudits extends Audits {
+			class TestableAudits extends Audits<typeof testConfig> {
 				public testIsDisabled(): boolean {
 					return this.isDisabled();
 				}
 			}
 
-			const audits = new TestableAudits();
+			const audits = new TestableAudits({ config: testConfig });
 			expect(audits.testIsDisabled()).toBe(false);
 		});
 
@@ -301,13 +301,13 @@ describe("Audits", () => {
 
 			const { Audits } = await import("./audits.js");
 
-			class TestableAudits extends Audits {
+			class TestableAudits extends Audits<typeof testConfig> {
 				public testIsDisabled(): boolean {
 					return this.isDisabled();
 				}
 			}
 
-			const audits = new TestableAudits();
+			const audits = new TestableAudits({ config: testConfig });
 			expect(audits.testIsDisabled()).toBe(false);
 		});
 	});
@@ -316,13 +316,13 @@ describe("Audits", () => {
 		it("should clear all buffered audits", async () => {
 			const { Audits } = await import("./audits.js");
 
-			class TestableAudits extends Audits {
+			class TestableAudits extends Audits<typeof testConfig> {
 				public testClearAudits(): void {
 					this.clearAudits();
 				}
 			}
 
-			const audits = new TestableAudits();
+			const audits = new TestableAudits({ config: testConfig });
 
 			audits.addAudit(createAuditItem());
 			audits.addAudit(createAuditItem());
@@ -339,7 +339,7 @@ describe("Audits", () => {
 			const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
 
 			const { Audits } = await import("./audits.js");
-			const audits = new Audits();
+			const audits = new Audits({ config: testConfig });
 
 			audits.addAudit(createAuditItem());
 			audits.publishStoredAudits();
@@ -353,7 +353,7 @@ describe("Audits", () => {
 		it("should use dedicated Console in production mode", async () => {
 			// No POWERTOOLS_DEV set = production mode
 			const { Audits } = await import("./audits.js");
-			const audits = new Audits();
+			const audits = new Audits({ config: testConfig });
 
 			audits.addAudit(createAuditItem());
 			audits.publishStoredAudits();
@@ -368,7 +368,7 @@ describe("Audits", () => {
 			const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
 
 			const { Audits } = await import("./audits.js");
-			const audits = new Audits();
+			const audits = new Audits({ config: testConfig });
 
 			audits.addAudit(createAuditItem());
 			audits.publishStoredAudits();
@@ -382,7 +382,7 @@ describe("Audits", () => {
 	describe("schema validation", () => {
 		it("should validate audit entries through LogAuditSchema", async () => {
 			const { Audits } = await import("./audits.js");
-			const audits = new Audits();
+			const audits = new Audits({ config: testConfig });
 
 			// Add audit with Error object (should be transformed by schema)
 			audits.addAudit({
@@ -400,7 +400,7 @@ describe("Audits", () => {
 
 		it("should apply default status when not provided", async () => {
 			const { Audits } = await import("./audits.js");
-			const audits = new Audits();
+			const audits = new Audits({ config: testConfig });
 
 			audits.addAudit(createAuditItem());
 			audits.publishStoredAudits();
@@ -413,7 +413,7 @@ describe("Audits", () => {
 
 		it("should apply default tier when not provided", async () => {
 			const { Audits } = await import("./audits.js");
-			const audits = new Audits();
+			const audits = new Audits({ config: testConfig });
 
 			audits.addAudit(createAuditItem());
 			audits.publishStoredAudits();
@@ -428,14 +428,14 @@ describe("Audits", () => {
 	describe("edge cases", () => {
 		it("should handle empty publish gracefully", async () => {
 			const { Audits } = await import("./audits.js");
-			const audits = new Audits();
+			const audits = new Audits({ config: testConfig });
 
 			expect(() => audits.publishStoredAudits()).not.toThrow();
 		});
 
 		it("should handle audit with all optional fields", async () => {
 			const { Audits } = await import("./audits.js");
-			const audits = new Audits();
+			const audits = new Audits({ config: testConfig });
 
 			audits.addAudit({
 				operation: "fullAudit",

@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { App, ResourceType } from "../test-config.js";
-import { LogAuditSchema, Status } from "./log.js";
+import { App, ResourceType, testConfig } from "../test-config.js";
+import { createTypedLogAuditSchema, Status } from "./log.js";
+
+const LogAuditSchema = createTypedLogAuditSchema(
+	testConfig.schemas.resourceReference,
+);
 
 const createValidTarget = () => ({
 	app: App.App1,

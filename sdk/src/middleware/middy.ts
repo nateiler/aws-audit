@@ -3,6 +3,12 @@ import type {
 	MiddyLikeRequest,
 } from "@aws-lambda-powertools/commons/types";
 import type { Audits } from "../audits.js";
+import type { AuditConfig } from "../config.js";
+
+/**
+ * Type alias for any Audits instance regardless of config type.
+ */
+type AnyAudits = Audits<AuditConfig>;
 
 /**
  * Creates a Middy.js middleware for automatic audit log management.
@@ -27,10 +33,15 @@ import type { Audits } from "../audits.js";
  * @example
  * ```typescript
  * import middy from '@middy/core';
- * import { Audits } from '@nateiler/aws-audit-sdk';
+ * import { Audits, defineAuditConfig } from '@nateiler/aws-audit-sdk';
  * import { logAudits } from '@nateiler/aws-audit-sdk/middleware';
  *
- * const audits = new Audits();
+ * const config = defineAuditConfig({
+ *   apps: ['Orders'] as const,
+ *   resourceTypes: ['Order'] as const,
+ * });
+ *
+ * const audits = new Audits({ config });
  *
  * const handler = middy(async (event, context) => {
  *   audits.addAudit({
@@ -55,7 +66,7 @@ import type { Audits } from "../audits.js";
  *   .use(cors());
  * ```
  */
-const logAudits = (handler: Audits): MiddlewareLikeObj => {
+const logAudits = (handler: AnyAudits): MiddlewareLikeObj => {
 	const instance = handler;
 
 	/**

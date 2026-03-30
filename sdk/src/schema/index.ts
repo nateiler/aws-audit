@@ -10,7 +10,7 @@
  * ```typescript
  * import {
  *   AuditSchema,
- *   LogAuditSchema,
+ *   createTypedLogAuditSchema,
  *   Status,
  *   Tier,
  *   type Audit,
@@ -25,7 +25,12 @@ export {
 	type ResourceReference,
 	Tier,
 } from "./common.js";
-export * from "./log.js";
+export {
+	type AnyStatus,
+	createTypedLogAuditSchema,
+	type LogAuditInput,
+	Status,
+} from "./log.js";
 export * from "./model.js";
 export * from "./service.js";
 export * from "./storage.js";

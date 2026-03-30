@@ -5,11 +5,7 @@ import {
 import { Logger } from "@aws-lambda-powertools/logger";
 import { injectLambdaContext } from "@aws-lambda-powertools/logger/middleware";
 import middy from "@middy/core";
-import {
-	AUDIT_LOG_IDENTIFIER,
-	AuditService,
-	LogAuditSchema,
-} from "@nateiler/aws-audit-sdk";
+import { AUDIT_LOG_IDENTIFIER, AuditService } from "@nateiler/aws-audit-sdk";
 import type { CloudWatchLogsEvent } from "aws-lambda";
 import { auditConfig } from "../audit-config.js";
 
@@ -34,10 +30,14 @@ const recordHandler = async (event: CloudWatchLogsEvent): Promise<void> => {
 	await Promise.allSettled(
 		records.map(async (record) => {
 			const message = JSON.parse(record.message);
+			const audit = message[AUDIT_LOG_IDENTIFIER];
+
+			if (!audit) {
+				logger.warn("No audit log identifier found in message", { message });
+				return;
+			}
 
 			try {
-				const audit = LogAuditSchema.parse(message[AUDIT_LOG_IDENTIFIER]);
-
 				logger.info("Storing audit to DynamoDB", { audit });
 
 				return await service.upsertItem(audit).then((result) => {
