@@ -65,11 +65,6 @@ export type StrictLogAuditInput<C extends AuditConfig> = Omit<
 };
 
 /**
- * Input type for Audits.addAudit when using strict typing.
- */
-export type AuditInput<C extends AuditConfig> = StrictLogAuditInput<C>;
-
-/**
  * Manages audit log collection and emission for AWS Lambda functions.
  *
  * Buffers audit entries and emits them as structured JSON logs to stdout,

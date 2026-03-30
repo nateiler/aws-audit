@@ -490,6 +490,7 @@ describe("utils", () => {
 					data: "",
 					kinesisSchemaVersion: "1.0",
 					sequenceNumber: "12345",
+					approximateArrivalTimestamp: 1234567890,
 				},
 				invokeIdentityArn: "arn:aws:lambda:...",
 				eventName: "aws:kinesis:record",

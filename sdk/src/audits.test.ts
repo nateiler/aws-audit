@@ -1,19 +1,26 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { StrictLogAuditInput } from "./audits.js";
 import { AUDIT_LOG_IDENTIFIER } from "./constants.js";
-import type { LogAuditInput } from "./schema/log.js";
 import { App, ResourceType, testConfig } from "./test-config.js";
 
-// Helper to create a valid audit item
+type TestAuditInput = StrictLogAuditInput<typeof testConfig>;
+
+// Default target used across tests
+const defaultTarget = {
+	app: App.App1,
+	type: ResourceType.UNKNOWN,
+	id: "test-id",
+} as const;
+
+// Helper to create a valid audit item with strict typing
 function createAuditItem(
-	overrides: Partial<LogAuditInput> = {},
-): LogAuditInput {
+	overrides: Partial<Omit<TestAuditInput, "target">> & {
+		target?: TestAuditInput["target"];
+	} = {},
+): TestAuditInput {
 	return {
 		operation: "testOperation",
-		target: {
-			app: App.App1,
-			type: ResourceType.UNKNOWN,
-			id: "test-id",
-		},
+		target: defaultTarget,
 		...overrides,
 	};
 }

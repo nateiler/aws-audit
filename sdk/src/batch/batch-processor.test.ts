@@ -2,6 +2,7 @@ import { EventType } from "@aws-lambda-powertools/batch";
 import type { SQSRecord } from "aws-lambda";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Audits } from "../audits.js";
+import type { AuditConfig } from "../config.js";
 import type { LogAuditInput } from "../schema/log.js";
 import { Status } from "../schema/log.js";
 import { App, ResourceType } from "../test-config.js";
@@ -55,7 +56,7 @@ vi.mock("../utils.js", () => ({
 }));
 
 describe("AuditBatchProcessor", () => {
-	let mockAudits: Audits;
+	let mockAudits: Audits<AuditConfig>;
 	let createAuditItem: (
 		record: SQSRecord,
 		overrides?: Partial<LogAuditInput>,
@@ -85,7 +86,7 @@ describe("AuditBatchProcessor", () => {
 		mockAudits = {
 			addAudit: vi.fn(),
 			publishStoredAudits: vi.fn(),
-		} as unknown as Audits;
+		} as unknown as Audits<AuditConfig>;
 
 		createAuditItem = vi.fn(
 			(record: SQSRecord, overrides?: Partial<LogAuditInput>) => ({

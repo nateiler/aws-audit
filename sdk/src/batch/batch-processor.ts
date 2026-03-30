@@ -10,6 +10,7 @@ import type {
 	SQSRecord,
 } from "aws-lambda";
 import type { Audits } from "../audits.js";
+import type { AuditConfig } from "../config.js";
 import { type LogAuditInput, Status } from "../schema/log.js";
 import {
 	extractOverridesFromBatchProcessor,
@@ -63,7 +64,7 @@ export class AuditBatchProcessor<
 	 */
 	public constructor(
 		eventType: keyof typeof EventType,
-		readonly audit: Audits,
+		readonly audit: Audits<AuditConfig>,
 		readonly createAuditItem: (
 			record: Record,
 			overrides?: Partial<LogAuditInput>,

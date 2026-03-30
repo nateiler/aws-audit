@@ -1,6 +1,7 @@
 import type { MiddyLikeRequest } from "@aws-lambda-powertools/commons/types";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Audits } from "../audits.js";
+import type { AuditConfig } from "../config.js";
 import { logAudits } from "./middy.js";
 
 describe("logAudits middleware", () => {
@@ -34,7 +35,9 @@ describe("logAudits middleware", () => {
 
 	describe("middleware structure", () => {
 		it("should return an object with before, after, and onError hooks", () => {
-			const middleware = logAudits(mockAudits as unknown as Audits);
+			const middleware = logAudits(
+				mockAudits as unknown as Audits<AuditConfig>,
+			);
 
 			expect(middleware).toHaveProperty("before");
 			expect(middleware).toHaveProperty("after");
@@ -47,7 +50,9 @@ describe("logAudits middleware", () => {
 
 	describe("before hook", () => {
 		it("should set cleanup function on request.internal", async () => {
-			const middleware = logAudits(mockAudits as unknown as Audits);
+			const middleware = logAudits(
+				mockAudits as unknown as Audits<AuditConfig>,
+			);
 
 			await middleware.before!(mockRequest);
 
@@ -57,7 +62,9 @@ describe("logAudits middleware", () => {
 		});
 
 		it("should preserve existing internal properties", async () => {
-			const middleware = logAudits(mockAudits as unknown as Audits);
+			const middleware = logAudits(
+				mockAudits as unknown as Audits<AuditConfig>,
+			);
 			mockRequest.internal = { existingKey: "existingValue" };
 
 			await middleware.before!(mockRequest);
@@ -71,7 +78,9 @@ describe("logAudits middleware", () => {
 		});
 
 		it("should handle undefined internal object", async () => {
-			const middleware = logAudits(mockAudits as unknown as Audits);
+			const middleware = logAudits(
+				mockAudits as unknown as Audits<AuditConfig>,
+			);
 			mockRequest.internal = undefined as unknown as Record<string, unknown>;
 
 			await middleware.before!(mockRequest);
@@ -83,7 +92,9 @@ describe("logAudits middleware", () => {
 
 	describe("after hook", () => {
 		it("should log the request event", async () => {
-			const middleware = logAudits(mockAudits as unknown as Audits);
+			const middleware = logAudits(
+				mockAudits as unknown as Audits<AuditConfig>,
+			);
 
 			await middleware.after!(mockRequest);
 
@@ -92,7 +103,9 @@ describe("logAudits middleware", () => {
 		});
 
 		it("should call publishStoredAudits", async () => {
-			const middleware = logAudits(mockAudits as unknown as Audits);
+			const middleware = logAudits(
+				mockAudits as unknown as Audits<AuditConfig>,
+			);
 
 			await middleware.after!(mockRequest);
 
@@ -100,7 +113,9 @@ describe("logAudits middleware", () => {
 		});
 
 		it("should handle complex event objects", async () => {
-			const middleware = logAudits(mockAudits as unknown as Audits);
+			const middleware = logAudits(
+				mockAudits as unknown as Audits<AuditConfig>,
+			);
 			mockRequest.event = {
 				Records: [
 					{ eventSource: "aws:sqs", body: '{"key": "value"}' },
@@ -116,7 +131,9 @@ describe("logAudits middleware", () => {
 
 	describe("onError hook", () => {
 		it("should log the request event on error", async () => {
-			const middleware = logAudits(mockAudits as unknown as Audits);
+			const middleware = logAudits(
+				mockAudits as unknown as Audits<AuditConfig>,
+			);
 			mockRequest.error = new Error("Test error");
 
 			await middleware.onError!(mockRequest);
@@ -126,7 +143,9 @@ describe("logAudits middleware", () => {
 		});
 
 		it("should call publishStoredAudits on error", async () => {
-			const middleware = logAudits(mockAudits as unknown as Audits);
+			const middleware = logAudits(
+				mockAudits as unknown as Audits<AuditConfig>,
+			);
 			mockRequest.error = new Error("Test error");
 
 			await middleware.onError!(mockRequest);
@@ -135,7 +154,9 @@ describe("logAudits middleware", () => {
 		});
 
 		it("should use same function as after hook", () => {
-			const middleware = logAudits(mockAudits as unknown as Audits);
+			const middleware = logAudits(
+				mockAudits as unknown as Audits<AuditConfig>,
+			);
 
 			expect(middleware.after).toBe(middleware.onError);
 		});
@@ -143,7 +164,9 @@ describe("logAudits middleware", () => {
 
 	describe("cleanup function", () => {
 		it("should be callable from request.internal", async () => {
-			const middleware = logAudits(mockAudits as unknown as Audits);
+			const middleware = logAudits(
+				mockAudits as unknown as Audits<AuditConfig>,
+			);
 			await middleware.before!(mockRequest);
 
 			const cleanupKey = `audits`;
@@ -158,7 +181,9 @@ describe("logAudits middleware", () => {
 		});
 
 		it("should allow early middleware return cleanup", async () => {
-			const middleware = logAudits(mockAudits as unknown as Audits);
+			const middleware = logAudits(
+				mockAudits as unknown as Audits<AuditConfig>,
+			);
 			await middleware.before!(mockRequest);
 
 			// Simulate another middleware calling the cleanup function directly
@@ -179,7 +204,9 @@ describe("logAudits middleware", () => {
 
 	describe("integration scenarios", () => {
 		it("should handle full request lifecycle", async () => {
-			const middleware = logAudits(mockAudits as unknown as Audits);
+			const middleware = logAudits(
+				mockAudits as unknown as Audits<AuditConfig>,
+			);
 
 			// Before hook
 			await middleware.before!(mockRequest);
@@ -195,7 +222,9 @@ describe("logAudits middleware", () => {
 		});
 
 		it("should handle request lifecycle with error", async () => {
-			const middleware = logAudits(mockAudits as unknown as Audits);
+			const middleware = logAudits(
+				mockAudits as unknown as Audits<AuditConfig>,
+			);
 
 			// Before hook
 			await middleware.before!(mockRequest);
@@ -216,8 +245,12 @@ describe("logAudits middleware", () => {
 				publishStoredAudits: vi.fn(),
 			};
 
-			const middleware1 = logAudits(mockAudits as unknown as Audits);
-			const middleware2 = logAudits(mockAudits2 as unknown as Audits);
+			const middleware1 = logAudits(
+				mockAudits as unknown as Audits<AuditConfig>,
+			);
+			const middleware2 = logAudits(
+				mockAudits2 as unknown as Audits<AuditConfig>,
+			);
 
 			await middleware1.before!(mockRequest);
 			await middleware1.after!(mockRequest);

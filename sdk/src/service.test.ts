@@ -124,8 +124,8 @@ describe("AuditService", () => {
 				type: ResourceType.UNKNOWN,
 				id: "resource-123",
 			},
-			updatedAt: undefined,
-			createdAt: undefined,
+			updatedAt: new Date("2024-01-15T10:30:00.000Z"),
+			createdAt: new Date("2024-01-15T10:30:00.000Z"),
 		};
 
 		it("should return an audit when found", async () => {
