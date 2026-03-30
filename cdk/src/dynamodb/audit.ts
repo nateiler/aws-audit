@@ -16,13 +16,11 @@ export default class extends Construct {
 	) {
 		super(scope, id);
 
-		const axiom = props.config;
-
 		/**
 		 * DynamoDB Table
 		 */
 		this.table = new dynamodb.Table(this, "AuditTable", {
-			tableName: DynamoDB.Table.Name(axiom),
+			tableName: DynamoDB.Table.Name(props.config),
 			removalPolicy: cdk.RemovalPolicy.RETAIN,
 			billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
 			partitionKey: {

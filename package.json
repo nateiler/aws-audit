@@ -5,7 +5,6 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-		"axiom": "axiom",
 		"test": "pnpm -r run test",
 		"test:coverage": "pnpm -r run test:coverage",
 		"cdk:synth:dev": "ENV=dev pnpm -r run cdk:synth",
