@@ -1,4 +1,4 @@
-import type { CDKConfig } from "@nateiler/aws-audit-cdk";
+import type { CDKConfig } from "@flipboxlabs/aws-audit-cdk";
 import type * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import { Construct } from "constructs";
 

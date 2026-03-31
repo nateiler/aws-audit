@@ -15,7 +15,7 @@
  *   Tier,
  *   type Audit,
  *   type LogAuditInput,
- * } from '@nateiler/aws-audit-sdk/schema';
+ * } from '@flipboxlabs/aws-audit-sdk/schema';
  * ```
  */
 export * from "./audit.js";

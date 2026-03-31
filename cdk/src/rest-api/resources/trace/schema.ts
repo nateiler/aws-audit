@@ -1,7 +1,7 @@
 import {
 	AuditPayloadSchema,
 	PaginationCollectionSchema,
-} from "@nateiler/aws-audit-sdk";
+} from "@flipboxlabs/aws-audit-sdk";
 import { z } from "zod";
 import { auditConfig } from "../../../audit-config.js";
 import { API_RESOURCE } from "./constants.js";

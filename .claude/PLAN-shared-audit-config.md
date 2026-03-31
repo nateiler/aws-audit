@@ -1,7 +1,7 @@
 # Plan: Share AuditConfig between SDK and CDK
 
 ## Goal
-Allow users to define their `AuditConfig` once using `defineAuditConfig` from `@nateiler/aws-audit-sdk/config` and pass it to CDK constructs. Constructs create an inline Lambda layer containing the config.
+Allow users to define their `AuditConfig` once using `defineAuditConfig` from `@flipboxlabs/aws-audit-sdk/config` and pass it to CDK constructs. Constructs create an inline Lambda layer containing the config.
 
 ## Approach
 1. Add `audit` property to `CDKConfig`
@@ -23,7 +23,7 @@ The layer only receives `apps` and `resourceTypes` via the `AuditConfigLayer` co
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
-import type { AuditConfig } from "@nateiler/aws-audit-sdk";
+import type { AuditConfig } from "@flipboxlabs/aws-audit-sdk";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import { Construct } from "constructs";
 
@@ -35,7 +35,7 @@ export class AuditConfigLayer extends Construct {
 
     // Generate config file content
     const configCode = `
-import { defineAuditConfig } from "@nateiler/aws-audit-sdk/config";
+import { defineAuditConfig } from "@flipboxlabs/aws-audit-sdk/config";
 
 export const auditConfig = defineAuditConfig({
   apps: ${JSON.stringify(config.apps)},
@@ -83,7 +83,7 @@ export const ESMNodeFunctionFactory =
 ### Step 4: Create layer once in user's stack and pass to constructs
 **User creates layer once:**
 ```typescript
-import { AuditConfigLayer } from "@nateiler/aws-audit-cdk/lib";
+import { AuditConfigLayer } from "@flipboxlabs/aws-audit-cdk/lib";
 
 // Create once per stack
 const auditLayer = new AuditConfigLayer(this, "AuditConfigLayer", auditConfig);
@@ -127,10 +127,10 @@ Mock the layer import path in tests.
 
 ## User Usage
 ```typescript
-import { defineAuditConfig } from "@nateiler/aws-audit-sdk/config";
-import type { CDKConfig } from "@nateiler/aws-audit-cdk";
-import { AuditConfigLayer } from "@nateiler/aws-audit-cdk/lib";
-import { CloudWatchConstruct } from "@nateiler/aws-audit-cdk/cloudwatch";
+import { defineAuditConfig } from "@flipboxlabs/aws-audit-sdk/config";
+import type { CDKConfig } from "@flipboxlabs/aws-audit-cdk";
+import { AuditConfigLayer } from "@flipboxlabs/aws-audit-cdk/lib";
+import { CloudWatchConstruct } from "@flipboxlabs/aws-audit-cdk/cloudwatch";
 
 // 1. Define audit config (apps & resourceTypes)
 const auditConfig = defineAuditConfig({

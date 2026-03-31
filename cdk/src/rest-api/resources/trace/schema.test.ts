@@ -1,5 +1,10 @@
-import { describe, expect, it } from "vitest";
-import { App } from "../../../test-config.js";
+import { describe, expect, it, vi } from "vitest";
+import { App, testConfig } from "../../../test-config.js";
+
+vi.mock("../../../audit-config.js", () => ({
+	auditConfig: testConfig,
+}));
+
 import { PathSchema, QuerySchema, ResponseSchema } from "./schema.js";
 
 describe("trace handler schemas", () => {

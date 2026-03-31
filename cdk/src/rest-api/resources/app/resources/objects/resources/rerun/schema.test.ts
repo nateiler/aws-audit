@@ -1,5 +1,14 @@
-import { describe, expect, it } from "vitest";
-import { App, ResourceType } from "../../../../../../../test-config.js";
+import { describe, expect, it, vi } from "vitest";
+import {
+	App,
+	ResourceType,
+	testConfig,
+} from "../../../../../../../test-config.js";
+
+vi.mock("../../../../../../../audit-config.js", () => ({
+	auditConfig: testConfig,
+}));
+
 import { PathSchema } from "./schema.js";
 
 describe("rerun handler schemas", () => {

@@ -8,7 +8,7 @@ import {
 	AuditService,
 	BatchHandler,
 	EventBridge,
-} from "@nateiler/aws-audit-sdk";
+} from "@flipboxlabs/aws-audit-sdk";
 import type { Context } from "aws-lambda";
 import {
 	type App,
@@ -73,5 +73,7 @@ app.post(
 	},
 );
 
-export const handler = async (event: unknown, context: Context) =>
-	app.resolve(event, context);
+export const handler = async (
+	event: unknown,
+	context: Context,
+): Promise<unknown> => app.resolve(event, context);

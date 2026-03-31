@@ -8,13 +8,13 @@
  * ```typescript
  * import * as cdk from "aws-cdk-lib";
  * import type { Construct } from "constructs";
- * import type { CDKConfig } from "@nateiler/aws-audit-cdk";
+ * import type { CDKConfig } from "@flipboxlabs/aws-audit-cdk";
  *
  * // Import constructs from the bootstrap directory
- * import CloudWatch from "@nateiler/aws-audit-cdk/bootstrap/cloudwatch/construct";
- * import DynamoDB from "@nateiler/aws-audit-cdk/bootstrap/dynamodb/construct";
- * import EventBridge from "@nateiler/aws-audit-cdk/bootstrap/eventbridge/construct";
- * import RestAPI from "@nateiler/aws-audit-cdk/bootstrap/rest-api/construct";
+ * import CloudWatch from "@flipboxlabs/aws-audit-cdk/bootstrap/cloudwatch/construct";
+ * import DynamoDB from "@flipboxlabs/aws-audit-cdk/bootstrap/dynamodb/construct";
+ * import EventBridge from "@flipboxlabs/aws-audit-cdk/bootstrap/eventbridge/construct";
+ * import RestAPI from "@flipboxlabs/aws-audit-cdk/bootstrap/rest-api/construct";
  *
  * interface Props {
  *   config: CDKConfig;

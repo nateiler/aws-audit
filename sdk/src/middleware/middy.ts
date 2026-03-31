@@ -33,8 +33,8 @@ type AnyAudits = Audits<AuditConfig>;
  * @example
  * ```typescript
  * import middy from '@middy/core';
- * import { Audits, defineAuditConfig } from '@nateiler/aws-audit-sdk';
- * import { logAudits } from '@nateiler/aws-audit-sdk/middleware';
+ * import { Audits, defineAuditConfig } from '@flipboxlabs/aws-audit-sdk';
+ * import { logAudits } from '@flipboxlabs/aws-audit-sdk/middleware';
  *
  * const config = defineAuditConfig({
  *   apps: ['Orders'] as const,

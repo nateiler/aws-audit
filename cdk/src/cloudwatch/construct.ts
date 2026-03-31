@@ -1,12 +1,12 @@
 import * as url from "node:url";
-import type { CDKConfig } from "@nateiler/aws-audit-cdk";
-import { ESMNodeFunctionFactory } from "@nateiler/aws-audit-cdk/lib";
-import { AUDIT_LOG_IDENTIFIER } from "@nateiler/aws-audit-sdk";
+import type { CDKConfig } from "@flipboxlabs/aws-audit-cdk";
+import { AUDIT_LOG_IDENTIFIER } from "@flipboxlabs/aws-audit-sdk";
 import type * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import type * as events from "aws-cdk-lib/aws-events";
 import { ServicePrincipal } from "aws-cdk-lib/aws-iam";
 import * as logs from "aws-cdk-lib/aws-logs";
 import { Construct } from "constructs";
+import { ESMNodeFunctionFactory } from "../lib/index.js";
 
 type Props = {
 	config: CDKConfig;

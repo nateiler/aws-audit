@@ -1,15 +1,44 @@
 {
-	"name": "@nateiler/aws-audit-sdk",
+	"name": "@flipboxlabs/aws-audit-sdk",
+	"version": "1.0.0",
+	"description": "AWS Audit SDK - Core SDK for audit logging and event management",
 	"type": "module",
-	"private": true,
+	"main": "./src/index.ts",
 	"exports": {
 		".": "./src/index.ts",
 		"./batch": "./src/batch/index.ts",
 		"./config": "./src/config.ts",
 		"./middleware": "./src/middleware/middy.ts"
 	},
+	"publishConfig": {
+		"main": "./dist/index.js",
+		"types": "./dist/index.d.ts",
+		"exports": {
+			".": {
+				"types": "./dist/index.d.ts",
+				"import": "./dist/index.js"
+			},
+			"./batch": {
+				"types": "./dist/batch/index.d.ts",
+				"import": "./dist/batch/index.js"
+			},
+			"./config": {
+				"types": "./dist/config.d.ts",
+				"import": "./dist/config.js"
+			},
+			"./middleware": {
+				"types": "./dist/middleware/middy.d.ts",
+				"import": "./dist/middleware/middy.js"
+			}
+		}
+	},
+	"files": [
+		"dist",
+		"README.md"
+	],
 	"scripts": {
-		"build": "tsc -p ./tsconfig.json",
+		"build": "tsc -p ./tsconfig.build.json",
+		"prepublishOnly": "pnpm run build",
 		"check-types": "tsc --noEmit -p ./tsconfig.json",
 		"lint": "npx biome lint",
 		"lint:fix": "npx biome lint --fix",
@@ -43,5 +72,24 @@
 	},
 	"engines": {
 		"node": ">=20"
-	}
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/flipboxlabs/aws-audit.git",
+		"directory": "sdk"
+	},
+	"bugs": {
+		"url": "https://github.com/flipboxlabs/aws-audit/issues"
+	},
+	"homepage": "https://github.com/flipboxlabs/aws-audit#readme",
+	"license": "MIT",
+	"keywords": [
+		"aws",
+		"audit",
+		"logging",
+		"eventbridge",
+		"dynamodb",
+		"lambda",
+		"serverless"
+	]
 }

@@ -1,4 +1,4 @@
-import { defineAuditConfig } from "@nateiler/aws-audit-sdk";
+import { defineAuditConfig } from "@flipboxlabs/aws-audit-sdk";
 
 /**
  * Test configuration for CDK tests.

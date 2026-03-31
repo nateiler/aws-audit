@@ -1,6 +1,6 @@
 import { Router } from "@aws-lambda-powertools/event-handler/http";
 import { Logger } from "@aws-lambda-powertools/logger";
-import { AuditService } from "@nateiler/aws-audit-sdk";
+import { AuditService } from "@flipboxlabs/aws-audit-sdk";
 import type { Context } from "aws-lambda";
 import { type App, auditConfig } from "../../../audit-config.js";
 import { API_RESOURCE } from "./constants.js";
@@ -49,5 +49,7 @@ app.get(
 	},
 );
 
-export const handler = async (event: unknown, context: Context) =>
-	app.resolve(event, context);
+export const handler = async (
+	event: unknown,
+	context: Context,
+): Promise<unknown> => app.resolve(event, context);

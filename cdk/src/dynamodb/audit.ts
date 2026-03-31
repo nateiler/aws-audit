@@ -1,5 +1,5 @@
-import type { CDKConfig } from "@nateiler/aws-audit-cdk";
-import { DynamoDB } from "@nateiler/aws-audit-sdk";
+import type { CDKConfig } from "@flipboxlabs/aws-audit-cdk";
+import { DynamoDB } from "@flipboxlabs/aws-audit-sdk";
 import * as cdk from "aws-cdk-lib";
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import { Construct } from "constructs";

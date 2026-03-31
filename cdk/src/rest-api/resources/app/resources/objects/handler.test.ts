@@ -1,14 +1,18 @@
 import type { APIGatewayProxyEventV2, Context } from "aws-lambda";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { App, ResourceType } from "../../../../../test-config.js";
+import { App, ResourceType, testConfig } from "../../../../../test-config.js";
 
 const { mockListItems } = vi.hoisted(() => ({
 	mockListItems: vi.fn(),
 }));
 
-vi.mock("@nateiler/aws-audit-sdk", async (importOriginal) => {
+vi.mock("../../../../../audit-config.js", () => ({
+	auditConfig: testConfig,
+}));
+
+vi.mock("@flipboxlabs/aws-audit-sdk", async (importOriginal) => {
 	const actual =
-		await importOriginal<typeof import("@nateiler/aws-audit-sdk")>();
+		await importOriginal<typeof import("@flipboxlabs/aws-audit-sdk")>();
 	return {
 		...actual,
 		AuditService: vi.fn().mockImplementation(() => ({

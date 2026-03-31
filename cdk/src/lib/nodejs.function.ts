@@ -1,4 +1,4 @@
-import type { CDKConfig } from "@nateiler/aws-audit-cdk";
+import type { CDKConfig } from "@flipboxlabs/aws-audit-cdk";
 import * as cdk from "aws-cdk-lib";
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as lambda from "aws-cdk-lib/aws-lambda";

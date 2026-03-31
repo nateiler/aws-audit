@@ -137,12 +137,12 @@ importers:
       '@aws-sdk/client-eventbridge':
         specifier: catalog:aws-sdk
         version: 3.1014.0
+      '@flipboxlabs/aws-audit-sdk':
+        specifier: workspace:^
+        version: link:../sdk
       '@middy/core':
         specifier: catalog:middleware
         version: 6.4.5
-      '@nateiler/aws-audit-sdk':
-        specifier: workspace:^
-        version: link:../sdk
       qs:
         specifier: catalog:utilities
         version: 6.15.0

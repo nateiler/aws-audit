@@ -1,5 +1,5 @@
 {
-	"name": "@nateiler/aws-audit",
+	"name": "@flipboxlabs/aws-audit",
 	"version": "1.0.0",
 	"description": "AWS Audit",
 	"private": true,

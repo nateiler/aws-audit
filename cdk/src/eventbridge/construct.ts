@@ -1,5 +1,5 @@
-import type { CDKConfig } from "@nateiler/aws-audit-cdk";
-import { EventBridge } from "@nateiler/aws-audit-sdk";
+import type { CDKConfig } from "@flipboxlabs/aws-audit-cdk";
+import { EventBridge } from "@flipboxlabs/aws-audit-sdk";
 import * as events from "aws-cdk-lib/aws-events";
 import { Construct } from "constructs";
 

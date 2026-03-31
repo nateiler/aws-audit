@@ -1,0 +1,12 @@
+{
+	"extends": "@tsconfig/node20/tsconfig.json",
+	"compilerOptions": {
+		"preserveConstEnums": true,
+		"declaration": true,
+		"declarationMap": true,
+		"outDir": "./dist",
+		"rootDir": "./src"
+	},
+	"include": ["src/**/*.ts"],
+	"exclude": ["**/*.test.ts", "node_modules", "coverage", "dist"]
+}

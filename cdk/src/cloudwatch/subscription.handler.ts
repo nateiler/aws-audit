@@ -4,8 +4,8 @@ import {
 } from "@aws-lambda-powertools/jmespath/envelopes";
 import { Logger } from "@aws-lambda-powertools/logger";
 import { injectLambdaContext } from "@aws-lambda-powertools/logger/middleware";
+import { AUDIT_LOG_IDENTIFIER, AuditService } from "@flipboxlabs/aws-audit-sdk";
 import middy from "@middy/core";
-import { AUDIT_LOG_IDENTIFIER, AuditService } from "@nateiler/aws-audit-sdk";
 import type { CloudWatchLogsEvent } from "aws-lambda";
 import { auditConfig } from "../audit-config.js";
 
