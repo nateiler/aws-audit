@@ -20,8 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       releases_created: ${{ steps.release.outputs.releases_created }}
-      sdk_release_created: ${{ steps.release.outputs['sdk--release_created'] }}
-      cdk_release_created: ${{ steps.release.outputs['cdk--release_created'] }}
+      paths_released: ${{ steps.release.outputs.paths_released }}
 
     steps:
       - name: Release Please
@@ -29,6 +28,12 @@ jobs:
         uses: googleapis/release-please-action@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Debug outputs
+        run: |
+          echo "releases_created: ${{ steps.release.outputs.releases_created }}"
+          echo "paths_released: ${{ steps.release.outputs.paths_released }}"
+          echo "all outputs: ${{ toJSON(steps.release.outputs) }}"
 
   publish:
     name: Publish to npm
@@ -60,14 +65,14 @@ jobs:
         run: pnpm -r run build
 
       - name: Publish SDK to npm
-        if: ${{ needs.release-please.outputs.sdk_release_created == 'true' }}
+        if: ${{ contains(needs.release-please.outputs.paths_released, 'sdk') }}
         working-directory: sdk
         run: pnpm publish --access public --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Publish CDK to npm
-        if: ${{ needs.release-please.outputs.cdk_release_created == 'true' }}
+        if: ${{ contains(needs.release-please.outputs.paths_released, 'cdk') }}
         working-directory: cdk
         run: pnpm publish --access public --no-git-checks
         env:
