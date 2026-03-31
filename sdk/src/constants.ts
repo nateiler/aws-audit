@@ -16,6 +16,11 @@
 export const AUDIT_LOG_IDENTIFIER = "_audit";
 
 /**
+ * SDK version string for debugging and compatibility checks.
+ */
+export const SDK_VERSION = "1.2.0";
+
+/**
  * Configuration for generating resource names.
  */
 type NameConfig = {
