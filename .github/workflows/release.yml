@@ -29,12 +29,6 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Debug outputs
-        run: |
-          echo "releases_created: ${{ steps.release.outputs.releases_created }}"
-          echo "paths_released: ${{ steps.release.outputs.paths_released }}"
-          echo "all outputs: ${{ toJSON(steps.release.outputs) }}"
-
   publish:
     name: Publish to npm
     runs-on: ubuntu-latest
