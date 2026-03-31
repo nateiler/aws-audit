@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/flipboxlabs/aws-audit/compare/sdk-v1.2.0...sdk-v1.3.0) (2026-03-31)
+
+
+### Features
+
+* **sdk:** add SDK_VERSION constant for version tracking ([20938ec](https://github.com/flipboxlabs/aws-audit/commit/20938ec36e18366431b58d6d557ec282db4373c9))
+
 ## [1.2.0](https://github.com/flipboxlabs/aws-audit/compare/sdk-v1.1.0...sdk-v1.2.0) (2026-03-31)
 
 
