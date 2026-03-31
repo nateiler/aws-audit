@@ -1,6 +1,6 @@
 # @flipboxlabs/aws-audit-cdk
 
-AWS Audit CDK - CDK constructs for AWS audit infrastructure.
+AWS Audit CDK - CDK constructs for AWS audit infrastructure
 
 ## Installation
 

@@ -1,6 +1,6 @@
 # @flipboxlabs/aws-audit-sdk
 
-AWS Audit SDK - Core SDK for audit logging and event management.
+AWS Audit SDK - Core SDK for batch audit logging and event management
 
 ## Installation
 
