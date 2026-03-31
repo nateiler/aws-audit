@@ -3,11 +3,13 @@
 	"packages": {
 		"sdk": {
 			"package-name": "@flipboxlabs/aws-audit-sdk",
+			"component": "sdk",
 			"changelog-path": "CHANGELOG.md",
 			"release-type": "node"
 		},
 		"cdk": {
 			"package-name": "@flipboxlabs/aws-audit-cdk",
+			"component": "cdk",
 			"changelog-path": "CHANGELOG.md",
 			"release-type": "node"
 		}
