@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/flipboxlabs/aws-audit/compare/sdk-v1.1.0...sdk-v1.2.0) (2026-03-31)
+
+
+### Features
+
+* use node 24 ([1f7bf67](https://github.com/flipboxlabs/aws-audit/commit/1f7bf675c0821a2b098e1bfa5664c61ebed98f45))
+
 ## [1.1.0](https://github.com/flipboxlabs/aws-audit/compare/aws-audit-sdk-v1.0.0...aws-audit-sdk-v1.1.0) (2026-03-31)
 
 
