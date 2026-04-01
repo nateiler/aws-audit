@@ -5,7 +5,16 @@ import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as nodejs from "aws-cdk-lib/aws-lambda-nodejs";
 import * as logs from "aws-cdk-lib/aws-logs";
 import type { Construct } from "constructs";
+import { AUDIT_CONFIG_LAYER_PATH } from "../src/lambda/audit-config-layer.js";
 
+/**
+ * Factory function that creates ESM Node.js Lambda functions with standard configuration.
+ *
+ * The audit config layer should be passed via the `layers` prop in NodejsFunctionProps.
+ *
+ * @param config - CDK configuration for environment variables
+ * @returns A function that creates configured NodejsFunction instances
+ */
 export const ESMNodeFunctionFactory =
 	(config: CDKConfig) =>
 	(scope: Construct, id: string, props: nodejs.NodejsFunctionProps) => {
@@ -19,7 +28,8 @@ export const ESMNodeFunctionFactory =
 			bundling: {
 				minify: true,
 				metafile: false,
-				externalModules: ["aws-sdk", "@aws-sdk/*"],
+				// Mark audit config layer path as external so esbuild doesn't try to bundle it
+				externalModules: ["aws-sdk", "@aws-sdk/*", AUDIT_CONFIG_LAYER_PATH],
 				format: nodejs.OutputFormat.ESM,
 				platform: "node",
 				target: "esnext",
@@ -54,6 +64,7 @@ export const ESMNodeFunctionFactory =
 			nodejsFunction.addEnvironment("SERVICE", config.service);
 		}
 
+		// Add Lambda Insights layer
 		nodejsFunction.addLayers(
 			lambda.LayerVersion.fromLayerVersionArn(
 				scope,

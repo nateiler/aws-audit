@@ -6,7 +6,7 @@
 	"main": "./src/index.ts",
 	"exports": {
 		".": "./src/index.ts",
-		"./lib": "./src/lib/index.ts",
+		"./lambda": "./src/lambda/construct.ts",
 		"./cloudwatch": "./src/cloudwatch/construct.ts",
 		"./dynamodb": "./src/dynamodb/construct.ts",
 		"./eventbridge": "./src/eventbridge/construct.ts",
@@ -20,9 +20,9 @@
 				"types": "./dist/index.d.ts",
 				"import": "./dist/index.js"
 			},
-			"./lib": {
-				"types": "./dist/lib/index.d.ts",
-				"import": "./dist/lib/index.js"
+			"./lambda": {
+				"types": "./dist/lambda/construct.d.ts",
+				"import": "./dist/lambda/construct.js"
 			},
 			"./cloudwatch": {
 				"types": "./dist/cloudwatch/construct.d.ts",

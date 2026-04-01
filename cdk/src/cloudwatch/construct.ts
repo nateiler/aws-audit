@@ -4,14 +4,20 @@ import { AUDIT_LOG_IDENTIFIER } from "@flipboxlabs/aws-audit-sdk";
 import type * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import type * as events from "aws-cdk-lib/aws-events";
 import { ServicePrincipal } from "aws-cdk-lib/aws-iam";
+import type * as lambda from "aws-cdk-lib/aws-lambda";
 import * as logs from "aws-cdk-lib/aws-logs";
 import { Construct } from "constructs";
-import { ESMNodeFunctionFactory } from "../lib/index.js";
+import { ESMNodeFunctionFactory } from "../../lib/index.js";
 
 type Props = {
 	config: CDKConfig;
 	table: dynamodb.ITable;
 	eventBus: events.IEventBus;
+	/** Lambda configuration */
+	lambda: {
+		/** Lambda layers to attach to the function */
+		layers: lambda.ILayerVersion[];
+	};
 
 	subscriptionFilter?: {
 		/** Scope of the subscription filter policy. Defaults to "ALL". */
@@ -28,24 +34,29 @@ export class CloudWatchConstruct extends Construct {
 		const ref = `${[props.config.env.toUpperCase(), "Account", "CloudWatch", "Subscription"].join("-")}`;
 
 		// Lambda Function
-		const lambda = ESMNodeFunctionFactory(props.config)(this, "subscription", {
-			functionName: ref,
-			entry: url.fileURLToPath(
-				new URL("subscription.handler.ts", import.meta.url).toString(),
-			),
-			currentVersionOptions: {
-				retryAttempts: 2,
+		const lambdaFn = ESMNodeFunctionFactory(props.config)(
+			this,
+			"subscription",
+			{
+				functionName: ref,
+				entry: url.fileURLToPath(
+					new URL("subscription.handler.ts", import.meta.url).toString(),
+				),
+				layers: props.lambda.layers,
+				currentVersionOptions: {
+					retryAttempts: 2,
+				},
 			},
-		});
+		);
 
 		// Allow writes to DynamoDB
-		props.table.grantWriteData(lambda);
+		props.table.grantWriteData(lambdaFn);
 
 		// Allow puts to EventBridge
-		props.eventBus.grantPutEventsTo(lambda);
+		props.eventBus.grantPutEventsTo(lambdaFn);
 
 		// Permissions
-		lambda.addPermission("LogProcessorPermission", {
+		lambdaFn.addPermission("LogProcessorPermission", {
 			principal: new ServicePrincipal("logs.amazonaws.com"),
 			action: "lambda:InvokeFunction",
 			sourceArn: `arn:aws:logs:${props.config.aws.region}:${props.config.aws.account}:log-group:*`,
@@ -60,18 +71,18 @@ export class CloudWatchConstruct extends Construct {
 				policyName: `${props.config.env.toUpperCase()}AccountLevelSubscriptionPolicy`,
 				policyType: "SUBSCRIPTION_FILTER_POLICY",
 				policyDocument: JSON.stringify({
-					DestinationArn: lambda.functionArn,
+					DestinationArn: lambdaFn.functionArn,
 					Distribution: "Random",
 					FilterPattern: `{ $.${AUDIT_LOG_IDENTIFIER}.operation = * }`,
 				}),
 				scope: props.subscriptionFilter?.scope ?? "ALL",
 				selectionCriteria:
 					props.subscriptionFilter?.selectionCriteria ??
-					`LogGroupName NOT IN ["/aws/lambda/${lambda.functionName}"]`,
+					`LogGroupName NOT IN ["/aws/lambda/${lambdaFn.functionName}"]`,
 			},
 		);
 
 		// Add explicit dependency on the Lambda function
-		accountPolicy.node.addDependency(lambda);
+		accountPolicy.node.addDependency(lambdaFn);
 	}
 }

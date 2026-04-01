@@ -3,8 +3,9 @@ import type { CDKConfig } from "@flipboxlabs/aws-audit-cdk";
 import * as apigateway from "aws-cdk-lib/aws-apigateway";
 import type * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import type * as events from "aws-cdk-lib/aws-events";
+import type * as lambda from "aws-cdk-lib/aws-lambda";
 import { Construct } from "constructs";
-import { ESMNodeFunctionFactory } from "../../../../../lib/index.js";
+import { ESMNodeFunctionFactory } from "../../../../../../lib/index.js";
 import { API_RESOURCE } from "./constants.js";
 import ReRun from "./resources/rerun/construct.js";
 
@@ -12,6 +13,11 @@ type Props = {
 	config: CDKConfig;
 	table: dynamodb.ITable;
 	eventBus: events.IEventBus;
+	/** Lambda configuration */
+	lambda: {
+		/** Lambda layers to attach to the function */
+		layers: lambda.ILayerVersion[];
+	};
 	restApi: {
 		resource: apigateway.IResource;
 	};
@@ -29,24 +35,29 @@ export default class extends Construct {
 		].join("-");
 
 		// Lambda
-		const lambda = ESMNodeFunctionFactory(props.config)(this, "NodeFunction", {
-			functionName: ref,
-			entry: url.fileURLToPath(
-				new URL("handler.ts", import.meta.url).toString(),
-			),
-			currentVersionOptions: {
-				retryAttempts: 1,
+		const lambdaFn = ESMNodeFunctionFactory(props.config)(
+			this,
+			"NodeFunction",
+			{
+				functionName: ref,
+				entry: url.fileURLToPath(
+					new URL("handler.ts", import.meta.url).toString(),
+				),
+				layers: props.lambda.layers,
+				currentVersionOptions: {
+					retryAttempts: 1,
+				},
 			},
-		});
+		);
 
 		// Logger / Metrics / Tracing
-		lambda.addEnvironment("POWERTOOLS_SERVICE_NAME", "Resource");
+		lambdaFn.addEnvironment("POWERTOOLS_SERVICE_NAME", "Resource");
 
 		// Audit
-		props.table.grantReadWriteData(lambda);
+		props.table.grantReadWriteData(lambdaFn);
 
 		// Integration
-		const integration = new apigateway.LambdaIntegration(lambda);
+		const integration = new apigateway.LambdaIntegration(lambdaFn);
 
 		const RESOURCE = props.restApi.resource
 			.addResource(API_RESOURCE.RESOURCE)
@@ -66,6 +77,7 @@ export default class extends Construct {
 			config: props.config,
 			table: props.table,
 			eventBus: props.eventBus,
+			lambda: props.lambda,
 			restApi: {
 				resource: ITEM_RESOURCE.addResource(
 					`{${API_RESOURCE.RESOURCE_WILDCARD_ITEM_AUDIT}}`,

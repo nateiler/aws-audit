@@ -2,6 +2,7 @@ import type { CDKConfig } from "@flipboxlabs/aws-audit-cdk";
 import * as apigateway from "aws-cdk-lib/aws-apigateway";
 import type * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import type * as events from "aws-cdk-lib/aws-events";
+import type * as lambda from "aws-cdk-lib/aws-lambda";
 import { Construct } from "constructs";
 import { RestApiResourcesConstruct as Resources } from "./resources/construct.js";
 
@@ -9,6 +10,11 @@ type Props = {
 	config: CDKConfig;
 	table: dynamodb.ITable;
 	eventBus: events.IEventBus;
+	/** Lambda configuration */
+	lambda: {
+		/** Lambda layers to attach to the function */
+		layers: lambda.ILayerVersion[];
+	};
 	/** Override REST API props. */
 	restApi?: Partial<apigateway.RestApiProps>;
 };

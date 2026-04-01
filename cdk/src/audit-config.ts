@@ -1,16 +1,17 @@
 import { defineAuditConfig } from "@flipboxlabs/aws-audit-sdk";
+// @ts-expect-error - This import is resolved at runtime from the Lambda layer
+import { apps, resourceTypes } from "/opt/nodejs/audit-config.js";
 
 /**
- * Shared audit configuration for the CDK.
+ * Audit configuration loaded from the Lambda layer.
  *
- * Defines the valid apps and resource types used across all handlers and schemas.
- * This config provides:
- * - Type-safe app and resourceType values
- * - Zod schemas for validation via `auditConfig.schemas`
+ * The `apps` and `resourceTypes` arrays are provided by the AuditConfigLayer
+ * construct at deploy time. This file creates the typed configuration object
+ * that handlers use.
  *
  * @example
  * ```typescript
- * import { auditConfig } from '../../audit-config.js';
+ * import { auditConfig, type App, type ResourceType } from '../../audit-config.js';
  *
  * // Use in handlers
  * const service = new AuditService(logger, auditConfig);
@@ -23,16 +24,18 @@ import { defineAuditConfig } from "@flipboxlabs/aws-audit-sdk";
  * ```
  */
 export const auditConfig = defineAuditConfig({
-	apps: [] as const,
-	resourceTypes: [] as const,
+	apps: apps as readonly string[],
+	resourceTypes: resourceTypes as readonly string[],
 });
 
 /**
  * Type alias for the App union type from the audit config.
+ * Note: At compile time this is `string` since the actual values come from the layer.
  */
 export type App = (typeof auditConfig)["_types"]["App"];
 
 /**
  * Type alias for the ResourceType union type from the audit config.
+ * Note: At compile time this is `string` since the actual values come from the layer.
  */
 export type ResourceType = (typeof auditConfig)["_types"]["ResourceType"];
