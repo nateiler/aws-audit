@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.2](https://github.com/flipboxlabs/aws-audit/compare/cdk-v1.1.1...cdk-v1.1.2) (2026-04-01)
+
+
+### Bug Fixes
+
+* type issues when running cdk functions ([4eca8c0](https://github.com/flipboxlabs/aws-audit/commit/4eca8c0e9496c54199e0297d3871fbb2a936dca4))
+
 ## [1.1.1](https://github.com/flipboxlabs/aws-audit/compare/cdk-v1.1.0...cdk-v1.1.1) (2026-03-31)
 
 
