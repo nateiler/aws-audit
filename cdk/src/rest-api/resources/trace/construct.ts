@@ -38,7 +38,7 @@ export default class extends Construct {
 			{
 				functionName: ref,
 				entry: url.fileURLToPath(
-					new URL("handler.ts", import.meta.url).toString(),
+					new URL("handler.js", import.meta.url).toString(),
 				),
 				layers: props.lambda.layers,
 				currentVersionOptions: {

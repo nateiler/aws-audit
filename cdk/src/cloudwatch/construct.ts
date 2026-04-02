@@ -40,7 +40,7 @@ export class CloudWatchConstruct extends Construct {
 			{
 				functionName: ref,
 				entry: url.fileURLToPath(
-					new URL("subscription.handler.ts", import.meta.url).toString(),
+					new URL("subscription.handler.js", import.meta.url).toString(),
 				),
 				layers: props.lambda.layers,
 				currentVersionOptions: {
