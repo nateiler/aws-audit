@@ -1,11 +1,11 @@
-import type { CDKConfig } from "@flipboxlabs/aws-audit-cdk";
 import * as cdk from "aws-cdk-lib";
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as nodejs from "aws-cdk-lib/aws-lambda-nodejs";
 import * as logs from "aws-cdk-lib/aws-logs";
 import type { Construct } from "constructs";
-import { AUDIT_CONFIG_LAYER_PATH } from "../src/lambda/audit-config-layer.js";
+import type { CDKConfig } from "../constants.js";
+import { AUDIT_CONFIG_LAYER_PATH } from "./audit-config-layer.js";
 
 /**
  * Factory function that creates ESM Node.js Lambda functions with standard configuration.
@@ -14,6 +14,8 @@ import { AUDIT_CONFIG_LAYER_PATH } from "../src/lambda/audit-config-layer.js";
  *
  * @param config - CDK configuration for environment variables
  * @returns A function that creates configured NodejsFunction instances
+ *
+ * @internal
  */
 export const ESMNodeFunctionFactory =
 	(config: CDKConfig) =>

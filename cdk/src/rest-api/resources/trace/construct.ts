@@ -4,7 +4,7 @@ import * as apigateway from "aws-cdk-lib/aws-apigateway";
 import type * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import type * as lambda from "aws-cdk-lib/aws-lambda";
 import { Construct } from "constructs";
-import { ESMNodeFunctionFactory } from "../../../../lib/index.js";
+import { ESMNodeFunctionFactory } from "../../../lambda/nodejs.function.js";
 import { API_RESOURCE } from "./constants.js";
 
 type Props = {

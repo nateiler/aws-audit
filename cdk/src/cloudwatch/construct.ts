@@ -7,7 +7,7 @@ import { ServicePrincipal } from "aws-cdk-lib/aws-iam";
 import type * as lambda from "aws-cdk-lib/aws-lambda";
 import * as logs from "aws-cdk-lib/aws-logs";
 import { Construct } from "constructs";
-import { ESMNodeFunctionFactory } from "../../lib/index.js";
+import { ESMNodeFunctionFactory } from "../lambda/nodejs.function.js";
 
 type Props = {
 	config: CDKConfig;
