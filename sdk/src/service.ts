@@ -3,6 +3,7 @@ import type { AuditConfig } from "./config.js";
 import { AuditEventBus } from "./events/bus.js";
 import { AuditRepository } from "./repository.js";
 import type { Audit } from "./schema/audit.js";
+import type { AnyStatus } from "./schema/log.js";
 import type { Pagination } from "./schema/model.js";
 import {
 	createTypedUpsertAuditSchema,
@@ -54,6 +55,26 @@ export type TypedListTraceItems<C extends AuditConfig> = {
 	tenantId?: string;
 	/** Trace ID to query for related audit records */
 	trace: string;
+	/** Optional application filter */
+	app?: InferApp<C>;
+	/** Optional resource filter */
+	resource?: {
+		/** Filter by resource type */
+		type?: InferResourceType<C>;
+		/** Filter by resource ID */
+		id?: string;
+	};
+};
+
+/**
+ * Typed options for listing audit items by status.
+ * Uses config-derived App and ResourceType types for strict typing.
+ */
+export type TypedListByStatusOptions<C extends AuditConfig> = {
+	/** Tenant/organization identifier for multi-tenancy support (optional) */
+	tenantId?: string;
+	/** Status to filter by (success, warn, fail, skip) */
+	status: AnyStatus;
 	/** Optional application filter */
 	app?: InferApp<C>;
 	/** Optional resource filter */
@@ -303,6 +324,51 @@ export class AuditService<C extends AuditConfig> {
 			this.logger.error("An error occurred while trying to list trace items", {
 				error,
 			});
+
+			throw error;
+		}
+	}
+
+	/**
+	 * Lists audit records by status with date ordering and pagination.
+	 *
+	 * Retrieves all audits with a specific status (e.g., 'fail', 'warn'),
+	 * ordered by creation date (most recent first).
+	 * Supports optional filtering by app, resource type, and resource ID.
+	 *
+	 * @param params - Query parameters including status and optional filters
+	 * @param pagination - Optional pagination settings
+	 * @returns Paginated collection of status-filtered audit records
+	 * @throws Re-throws any storage errors after logging
+	 *
+	 * @example
+	 * ```typescript
+	 * // Get all failed audits, most recent first
+	 * const { items } = await service.listByStatus({
+	 *   status: 'fail',
+	 * });
+	 *
+	 * // Filter by app and resource type
+	 * const { items } = await service.listByStatus({
+	 *   status: 'fail',
+	 *   app: 'Orders',
+	 *   resource: { type: 'Order' },
+	 * });
+	 * ```
+	 */
+	public async listByStatus(
+		params: TypedListByStatusOptions<C>,
+		pagination?: Pagination,
+	) {
+		try {
+			return await this.storage.listByStatus(params, pagination);
+		} catch (error) {
+			this.logger.error(
+				"An error occurred while trying to list items by status",
+				{
+					error,
+				},
+			);
 
 			throw error;
 		}
