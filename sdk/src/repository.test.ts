@@ -4,6 +4,7 @@ import {
 	type DynamoDBClient,
 	GetItemCommand,
 	QueryCommand,
+	UpdateItemCommand,
 } from "@aws-sdk/client-dynamodb";
 import { marshall } from "@aws-sdk/util-dynamodb";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -586,6 +587,301 @@ describe("AuditRepository", () => {
 			const command = mockClient.send.mock.calls[0][0] as QueryCommand;
 			const expressionValues = command.input.ExpressionAttributeValues;
 			expect(expressionValues?.[":PK"]?.S).toBe("App1.Unknown#resource-123");
+		});
+	});
+
+	describe("upsertItem", () => {
+		it("should send UpdateItemCommand with correct table name", async () => {
+			mockClient.send.mockResolvedValue({
+				Attributes: marshall({
+					attempts: [
+						{ number: 1, status: "success", at: "2024-01-01T00:00:00Z" },
+					],
+				}),
+			});
+
+			const item = createMockUpsertInput();
+			const attempt = {
+				number: 1,
+				status: "success",
+				at: "2024-01-01T00:00:00Z",
+			};
+
+			await repository.upsertItem(item, attempt);
+
+			expect(mockClient.send).toHaveBeenCalledWith(
+				expect.any(UpdateItemCommand),
+			);
+			const command = mockClient.send.mock.calls[0][0] as UpdateItemCommand;
+			expect(command.input.TableName).toBe(DynamoDB.Table.Name());
+		});
+
+		it("should return attempt number from response", async () => {
+			mockClient.send.mockResolvedValue({
+				Attributes: marshall({
+					attempts: [
+						{ number: 1, status: "fail", at: "2024-01-01T00:00:00Z" },
+						{ number: 2, status: "success", at: "2024-01-02T00:00:00Z" },
+					],
+				}),
+			});
+
+			const item = createMockUpsertInput();
+			const attempt = {
+				number: 1,
+				status: "success",
+				at: "2024-01-02T00:00:00Z",
+			};
+
+			const result = await repository.upsertItem(item, attempt);
+
+			expect(result).toBe(2);
+		});
+
+		it("should include list_append expression for attempts", async () => {
+			mockClient.send.mockResolvedValue({
+				Attributes: marshall({
+					attempts: [
+						{ number: 1, status: "success", at: "2024-01-01T00:00:00Z" },
+					],
+				}),
+			});
+
+			const item = createMockUpsertInput();
+			const attempt = {
+				number: 1,
+				status: "success",
+				at: "2024-01-01T00:00:00Z",
+			};
+
+			await repository.upsertItem(item, attempt);
+
+			const command = mockClient.send.mock.calls[0][0] as UpdateItemCommand;
+			expect(command.input.UpdateExpression).toContain(
+				"#attempts = list_append(if_not_exists(#attempts, :emptyList), :newAttempt)",
+			);
+		});
+
+		it("should include if_not_exists expression for createdAt", async () => {
+			mockClient.send.mockResolvedValue({
+				Attributes: marshall({
+					attempts: [
+						{ number: 1, status: "success", at: "2024-01-01T00:00:00Z" },
+					],
+				}),
+			});
+
+			const item = createMockUpsertInput();
+			const attempt = {
+				number: 1,
+				status: "success",
+				at: "2024-01-01T00:00:00Z",
+			};
+
+			await repository.upsertItem(item, attempt);
+
+			const command = mockClient.send.mock.calls[0][0] as UpdateItemCommand;
+			expect(command.input.UpdateExpression).toContain(
+				"#createdAt = if_not_exists(#createdAt, :createdAt)",
+			);
+		});
+
+		it("should request ALL_NEW return values", async () => {
+			mockClient.send.mockResolvedValue({
+				Attributes: marshall({
+					attempts: [
+						{ number: 1, status: "success", at: "2024-01-01T00:00:00Z" },
+					],
+				}),
+			});
+
+			const item = createMockUpsertInput();
+			const attempt = {
+				number: 1,
+				status: "success",
+				at: "2024-01-01T00:00:00Z",
+			};
+
+			await repository.upsertItem(item, attempt);
+
+			const command = mockClient.send.mock.calls[0][0] as UpdateItemCommand;
+			expect(command.input.ReturnValues).toBe("ALL_NEW");
+		});
+
+		it("should throw error when Attributes is undefined", async () => {
+			mockClient.send.mockResolvedValue({
+				Attributes: undefined,
+			});
+
+			const item = createMockUpsertInput();
+			const attempt = {
+				number: 1,
+				status: "success",
+				at: "2024-01-01T00:00:00Z",
+			};
+
+			await expect(repository.upsertItem(item, attempt)).rejects.toThrow(
+				"UpdateItem did not return attributes",
+			);
+		});
+
+		it("should include all payload fields in update expression", async () => {
+			mockClient.send.mockResolvedValue({
+				Attributes: marshall({
+					attempts: [
+						{ number: 1, status: "success", at: "2024-01-01T00:00:00Z" },
+					],
+				}),
+			});
+
+			const item = createMockUpsertInput({
+				message: "Test message",
+				trace: "trace-123:1",
+			});
+			const attempt = {
+				number: 1,
+				status: "success",
+				at: "2024-01-01T00:00:00Z",
+			};
+
+			await repository.upsertItem(item, attempt);
+
+			const command = mockClient.send.mock.calls[0][0] as UpdateItemCommand;
+			expect(command.input.UpdateExpression).toContain("#status");
+			expect(command.input.UpdateExpression).toContain("#operation");
+			expect(command.input.UpdateExpression).toContain("#target");
+			expect(command.input.UpdateExpression).toContain("#message");
+			expect(command.input.UpdateExpression).toContain("#trace");
+		});
+
+		it("should include TTL in update expression", async () => {
+			mockClient.send.mockResolvedValue({
+				Attributes: marshall({
+					attempts: [
+						{ number: 1, status: "success", at: "2024-01-01T00:00:00Z" },
+					],
+				}),
+			});
+
+			const item = createMockUpsertInput();
+			const attempt = {
+				number: 1,
+				status: "success",
+				at: "2024-01-01T00:00:00Z",
+			};
+
+			await repository.upsertItem(item, attempt);
+
+			const command = mockClient.send.mock.calls[0][0] as UpdateItemCommand;
+			expect(command.input.UpdateExpression).toContain("#ttl");
+			expect(command.input.ExpressionAttributeNames).toHaveProperty(
+				"#ttl",
+				"ttl",
+			);
+		});
+
+		it("should construct correct primary key", async () => {
+			mockClient.send.mockResolvedValue({
+				Attributes: marshall({
+					attempts: [
+						{ number: 1, status: "success", at: "2024-01-01T00:00:00Z" },
+					],
+				}),
+			});
+
+			const item = createMockUpsertInput();
+			const attempt = {
+				number: 1,
+				status: "success",
+				at: "2024-01-01T00:00:00Z",
+			};
+
+			await repository.upsertItem(item, attempt);
+
+			const command = mockClient.send.mock.calls[0][0] as UpdateItemCommand;
+			expect(command.input.Key?.PK?.S).toBe("App1.Unknown");
+		});
+
+		it("should construct tenant-prefixed primary key when tenantId is provided", async () => {
+			mockClient.send.mockResolvedValue({
+				Attributes: marshall({
+					attempts: [
+						{ number: 1, status: "success", at: "2024-01-01T00:00:00Z" },
+					],
+				}),
+			});
+
+			const item = createMockUpsertInput({ tenantId: "tenant-abc" });
+			const attempt = {
+				number: 1,
+				status: "success",
+				at: "2024-01-01T00:00:00Z",
+			};
+
+			await repository.upsertItem(item, attempt);
+
+			const command = mockClient.send.mock.calls[0][0] as UpdateItemCommand;
+			expect(command.input.Key?.PK?.S).toBe("tenant-abc#App1.Unknown");
+		});
+
+		it("should include secondary keys in update expression", async () => {
+			mockClient.send.mockResolvedValue({
+				Attributes: marshall({
+					attempts: [
+						{ number: 1, status: "success", at: "2024-01-01T00:00:00Z" },
+					],
+				}),
+			});
+
+			const item = createMockUpsertInput({ trace: "trace-xyz:3" });
+			const attempt = {
+				number: 1,
+				status: "success",
+				at: "2024-01-01T00:00:00Z",
+			};
+
+			await repository.upsertItem(item, attempt);
+
+			const command = mockClient.send.mock.calls[0][0] as UpdateItemCommand;
+			// Should include GSI keys
+			expect(command.input.ExpressionAttributeNames).toHaveProperty(
+				"#GSI1_SS_PK",
+				"GSI1_SS_PK",
+			);
+			expect(command.input.ExpressionAttributeNames).toHaveProperty(
+				"#GSI1_SN_PK",
+				"GSI1_SN_PK",
+			);
+		});
+
+		it("should include attempt with error in expression values", async () => {
+			mockClient.send.mockResolvedValue({
+				Attributes: marshall({
+					attempts: [
+						{
+							number: 1,
+							status: "fail",
+							error: "Connection timeout",
+							at: "2024-01-01T00:00:00Z",
+						},
+					],
+				}),
+			});
+
+			const item = createMockUpsertInput({ status: "fail" });
+			const attempt = {
+				number: 1,
+				status: "fail",
+				error: "Connection timeout",
+				at: "2024-01-01T00:00:00Z",
+			};
+
+			await repository.upsertItem(item, attempt);
+
+			const command = mockClient.send.mock.calls[0][0] as UpdateItemCommand;
+			expect(
+				command.input.ExpressionAttributeValues?.[":newAttempt"],
+			).toBeDefined();
 		});
 	});
 

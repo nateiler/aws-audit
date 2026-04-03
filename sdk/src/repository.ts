@@ -4,6 +4,7 @@ import {
 	DynamoDBClient,
 	GetItemCommand,
 	QueryCommand,
+	UpdateItemCommand,
 	type WriteRequest,
 } from "@aws-sdk/client-dynamodb";
 import type { NativeAttributeValue } from "@aws-sdk/util-dynamodb";
@@ -427,6 +428,114 @@ export class AuditRepository<C extends AuditConfig> {
 		);
 
 		return true;
+	}
+
+	/**
+	 * Upserts a single audit record with atomic attempt tracking.
+	 *
+	 * Uses DynamoDB UpdateItem with conditional expressions to:
+	 * - Create a new item if it doesn't exist (with attempts = [currentAttempt])
+	 * - Append to existing attempts array if item exists
+	 * - Preserve original createdAt timestamp on updates
+	 *
+	 * This is atomic and race-condition safe for retry tracking.
+	 *
+	 * @param item - The audit record to upsert
+	 * @param currentAttempt - The current attempt to append
+	 * @returns The attempt number (1 for new items, incremented for existing)
+	 *
+	 * @example
+	 * ```typescript
+	 * const attemptNumber = await repository.upsertItem(
+	 *   { operation: 'processPayment', status: 'success', ... },
+	 *   { number: 1, status: 'success', at: '2024-01-01T00:00:00Z' }
+	 * );
+	 * ```
+	 */
+	public async upsertItem(
+		item: UpsertAuditInput,
+		currentAttempt: {
+			number: number;
+			status: string;
+			error?: unknown;
+			at: string;
+		},
+	): Promise<number> {
+		const now = new Date();
+
+		const payload = AuditStorageSchema.parse({
+			createdAt: now,
+			...item,
+			updatedAt: now,
+		});
+
+		const primaryKey = this.constructPrimaryKey({
+			tenantId: payload.tenantId,
+			id: payload.id,
+			resourceType: payload.target.type,
+			app: payload.target.app,
+		});
+
+		const secondaryKeys = this.constructSecondaryKeys(payload);
+		const ttlAttribute = this.constructTTLAttribute(DEFAULT_TTL);
+
+		const expressionAttributeNames: Record<string, string> = {};
+		const expressionAttributeValues: Record<string, unknown> = {
+			":emptyList": [],
+			":newAttempt": [currentAttempt],
+		};
+		const setClauses: string[] = [
+			"#attempts = list_append(if_not_exists(#attempts, :emptyList), :newAttempt)",
+			"#createdAt = if_not_exists(#createdAt, :createdAt)",
+		];
+		expressionAttributeNames["#attempts"] = "attempts";
+		expressionAttributeNames["#createdAt"] = "createdAt";
+
+		// Add all payload fields dynamically
+		const allFields: Record<string, unknown> = {
+			...payload,
+			...secondaryKeys,
+			ttl: ttlAttribute.ttl,
+		};
+
+		// Fields that need special handling (already in setClauses)
+		const specialFields = new Set(["attempts", "createdAt"]);
+
+		for (const [key, value] of Object.entries(allFields)) {
+			if (value === undefined) continue;
+
+			expressionAttributeNames[`#${key}`] = key;
+			expressionAttributeValues[`:${key}`] = value;
+
+			if (!specialFields.has(key)) {
+				setClauses.push(`#${key} = :${key}`);
+			}
+		}
+
+		const result = await this.client.send(
+			new UpdateItemCommand({
+				TableName: DynamoDB.Table.Name(),
+				Key: marshall(primaryKey, {
+					removeUndefinedValues: true,
+					convertEmptyValues: true,
+					convertClassInstanceToMap: true,
+				}),
+				UpdateExpression: `SET ${setClauses.join(", ")}`,
+				ExpressionAttributeNames: expressionAttributeNames,
+				ExpressionAttributeValues: marshall(expressionAttributeValues, {
+					removeUndefinedValues: true,
+					convertEmptyValues: true,
+					convertClassInstanceToMap: true,
+				}),
+				ReturnValues: "ALL_NEW",
+			}),
+		);
+
+		if (!result.Attributes) {
+			throw new Error("UpdateItem did not return attributes");
+		}
+		const updated = unmarshall(result.Attributes) as { attempts: unknown[] };
+		return updated.attempts.length;
 	}
 
 	/**

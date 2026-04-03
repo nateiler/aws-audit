@@ -464,5 +464,45 @@ describe("Audits", () => {
 			expect(audit.message).toBe("Test message");
 			expect(audit.tier).toBe(3);
 		});
+
+		it("should handle resources as an array", async () => {
+			const { Audits } = await import("./audits.js");
+			const audits = new Audits({ config: testConfig });
+
+			audits.addAudit({
+				operation: "withResourcesArray",
+				target: { app: App.App1, type: ResourceType.UNKNOWN, id: "123" },
+				resources: [
+					{ app: App.App1, type: ResourceType.UNKNOWN, id: "res-1" },
+					{ app: App.App1, type: ResourceType.UNKNOWN, id: "res-2" },
+				],
+			});
+			audits.publishStoredAudits();
+
+			const parsed = getLoggedAudit(0);
+			const audit = parsed[AUDIT_LOG_IDENTIFIER] as Record<string, unknown>;
+			expect(audit.operation).toBe("withResourcesArray");
+		});
+
+		it("should handle resources as a Set", async () => {
+			const { Audits } = await import("./audits.js");
+			const audits = new Audits({ config: testConfig });
+
+			const resourcesSet = new Set([
+				{ app: App.App1, type: ResourceType.UNKNOWN, id: "res-1" },
+				{ app: App.App1, type: ResourceType.UNKNOWN, id: "res-2" },
+			]);
+
+			audits.addAudit({
+				operation: "withResourcesSet",
+				target: { app: App.App1, type: ResourceType.UNKNOWN, id: "123" },
+				resources: resourcesSet,
+			});
+			audits.publishStoredAudits();
+
+			const parsed = getLoggedAudit(0);
+			const audit = parsed[AUDIT_LOG_IDENTIFIER] as Record<string, unknown>;
+			expect(audit.operation).toBe("withResourcesSet");
+		});
 	});
 });

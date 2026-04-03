@@ -208,34 +208,12 @@ export class AuditService<C extends AuditConfig> {
 			at: now,
 		};
 
-		// Check for existing audit to handle retry tracking
-		if (item.id) {
-			try {
-				const existing = await this.storage.getItem({
-					id: item.id,
-					app: item.target.app as InferApp<C>,
-					resourceType: item.target.type as InferResourceType<C>,
-					tenantId: item.tenantId,
-				});
+		// Upsert main item with atomic attempt tracking
+		// This handles both new items and retries in a single atomic operation
+		const attemptNumber = await this.storage.upsertItem(item, currentAttempt);
+		currentAttempt.number = attemptNumber;
 
-				if (existing) {
-					// Append to existing attempts array
-					const existingAttempts = existing.attempts ?? [];
-					currentAttempt.number = existingAttempts.length + 1;
-					item.attempts = [...existingAttempts, currentAttempt];
-					// Preserve original createdAt
-					item.createdAt = existing.createdAt.toISOString();
-				} else {
-					item.attempts = [currentAttempt];
-				}
-			} catch {
-				// Audit doesn't exist, this is the first attempt
-				item.attempts = [currentAttempt];
-			}
-		} else {
-			item.attempts = [currentAttempt];
-		}
-
+		// Build batch for related resource items (these don't need retry tracking)
 		const batch: Array<UpsertAuditInput> = Array.from(item.resources || [])
 			.filter((resource) => !!resource.id)
 			.map((resource) => ({
@@ -256,7 +234,9 @@ export class AuditService<C extends AuditConfig> {
 				attempts: undefined,
 			}));
 
-		await this.storage.upsertBatch([item, ...batch]);
+		if (batch.length > 0) {
+			await this.storage.upsertBatch(batch);
+		}
 
 		await this.events?.upserted([item]);
 	}
