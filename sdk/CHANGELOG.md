@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.3](https://github.com/flipboxlabs/aws-audit/compare/sdk-v1.1.2...sdk-v1.1.3) (2026-04-04)
+
+
+### Bug Fixes
+
+* **sdk:** fix BatchHandler result accumulation — push instead of concat ([3c44b51](https://github.com/flipboxlabs/aws-audit/commit/3c44b519b7d3228200ff0258d7a9fa60edaa2bc0))
+* **sdk:** fix BatchHandler result accumulation using push instead of concat ([4199724](https://github.com/flipboxlabs/aws-audit/commit/419972452177fdeddcd1e8644ffa142568b5a0ca)), closes [#14](https://github.com/flipboxlabs/aws-audit/issues/14)
+
 ## [1.1.2](https://github.com/flipboxlabs/aws-audit/compare/sdk-v1.1.1...sdk-v1.1.2) (2026-04-03)
 
 
