@@ -849,14 +849,12 @@ export class AuditRepository<C extends AuditConfig> {
 	 * @returns Parsed and validated Audit object
 	 * @internal
 	 */
-	private transformItem(item: DynamoDBItem) {
-		return Promise.resolve(
-			AuditSchema.parse({
-				trace: `${item.GSI1_SN_PK}:${item.GSI1_SN_SK}`,
-				...item,
-				id: item.id.split("#").pop(),
-			}),
-		);
+	private transformItem(item: DynamoDBItem): Audit {
+		return AuditSchema.parse({
+			trace: `${item.GSI1_SN_PK}:${item.GSI1_SN_SK}`,
+			...item,
+			id: item.id.split("#").pop(),
+		});
 	}
 
 	/**
