@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.3](https://github.com/flipboxlabs/aws-audit/compare/sdk-v1.2.2...sdk-v1.2.3) (2026-04-06)
+
+
+### Bug Fixes
+
+* **sdk:** lazy-evaluate process.env.SERVICE in defineAuditConfig ([c12ac4f](https://github.com/flipboxlabs/aws-audit/commit/c12ac4fe4573642eefa3d2f4f8e9e37046b4d9de))
+* **sdk:** replace AES-256-CTR pagination tokens with base64url encoding ([916be50](https://github.com/flipboxlabs/aws-audit/commit/916be50f7467bbe76c38a2f60d3c08dad30ad84c))
+
 ## [1.2.2](https://github.com/flipboxlabs/aws-audit/compare/sdk-v1.2.1...sdk-v1.2.2) (2026-04-06)
 
 
