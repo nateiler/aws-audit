@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from "vite-plus/test";
-import { defineAuditConfig } from "./config.js";
+import { DEFAULT_TTL_SECONDS, defineAuditConfig } from "./config.js";
 
 describe("defineAuditConfig", () => {
   describe("service field", () => {
@@ -35,13 +35,10 @@ describe("defineAuditConfig", () => {
         resourceTypes: ["Resource1"] as const,
       });
 
-      // SERVICE not set yet — should be undefined
       expect(config.service).toBeUndefined();
 
-      // Now set it after module creation
       process.env.SERVICE = "lazy-service";
 
-      // Should now reflect the updated env var
       expect(config.service).toBe("lazy-service");
     });
 
@@ -70,6 +67,39 @@ describe("defineAuditConfig", () => {
 
       process.env.SERVICE = "v2";
       expect(config.service).toBe("v2");
+    });
+  });
+
+  describe("ttlSeconds", () => {
+    it("should default to 90 days in seconds when not supplied", () => {
+      const config = defineAuditConfig({
+        apps: ["App1"] as const,
+        resourceTypes: ["Resource"] as const,
+      });
+
+      expect(config.ttlSeconds).toBe(DEFAULT_TTL_SECONDS);
+      expect(config.ttlSeconds).toBe(60 * 60 * 24 * 90);
+    });
+
+    it("should use custom ttlSeconds when supplied", () => {
+      const customTtl = 60 * 60 * 24 * 30;
+      const config = defineAuditConfig({
+        apps: ["App1"] as const,
+        resourceTypes: ["Resource"] as const,
+        ttlSeconds: customTtl,
+      });
+
+      expect(config.ttlSeconds).toBe(customTtl);
+    });
+
+    it("should allow very short TTL for testing purposes", () => {
+      const config = defineAuditConfig({
+        apps: ["App1"] as const,
+        resourceTypes: ["Resource"] as const,
+        ttlSeconds: 3600,
+      });
+
+      expect(config.ttlSeconds).toBe(3600);
     });
   });
 

@@ -9,7 +9,7 @@ import {
 } from "@aws-sdk/client-dynamodb";
 import type { NativeAttributeValue } from "@aws-sdk/util-dynamodb";
 import { marshall, unmarshall } from "@aws-sdk/util-dynamodb";
-import type { AuditConfig } from "./config.js";
+import { DEFAULT_TTL_SECONDS, type AuditConfig } from "./config.js";
 import { DynamoDB } from "./constants.js";
 import { decodeNextPageToken, encodeNextPageToken } from "./repository.utils.js";
 import {
@@ -23,12 +23,6 @@ import type { UpsertAuditInput } from "./schema/service.js";
 import { type AuditStorage, AuditStorageSchema } from "./schema/storage.js";
 import type { AnyApp, AnyResourceType, InferApp, InferResourceType } from "./types.js";
 import { getTraceParts } from "./utils.js";
-
-/**
- * Default TTL for audit records in seconds (90 days).
- * Records will be automatically deleted by DynamoDB after this period.
- */
-const DEFAULT_TTL = 60 * 60 * 24 * 90; // 90 days
 
 /**
  * DynamoDB TTL attribute structure.
@@ -380,7 +374,7 @@ export class AuditRepository<C extends AuditConfig> {
                   app: payload.target.app,
                 }),
                 ...this.constructSecondaryKeys(payload),
-                ...this.constructTTLAttribute(DEFAULT_TTL),
+                ...this.constructTTLAttribute(this.config.ttlSeconds),
                 ...payload,
               },
               {
@@ -510,7 +504,7 @@ export class AuditRepository<C extends AuditConfig> {
     });
 
     const secondaryKeys = this.constructSecondaryKeys(payload);
-    const ttlAttribute = this.constructTTLAttribute(DEFAULT_TTL);
+    const ttlAttribute = this.constructTTLAttribute(this.config.ttlSeconds);
 
     const expressionAttributeNames: Record<string, string> = {};
     const expressionAttributeValues: Record<string, unknown> = {
@@ -837,7 +831,10 @@ export class AuditRepository<C extends AuditConfig> {
    * @returns TTL attribute with Unix timestamp in seconds
    * @internal
    */
-  private constructTTLAttribute(ttlSeconds: number = DEFAULT_TTL, date?: Date): TTLAttribute {
+  private constructTTLAttribute(
+    ttlSeconds: number = DEFAULT_TTL_SECONDS,
+    date?: Date,
+  ): TTLAttribute {
     const ttl = date || new Date();
 
     if (ttlSeconds) {

@@ -368,13 +368,56 @@ describe("AuditRepository", () => {
       expect(item?.GSI1_SN_PK?.S).toBe("trace-no-tenant");
     });
 
+    it("should use config ttlSeconds for TTL calculation", async () => {
+      mockClient.send.mockResolvedValue({});
+
+      const customTtlSeconds = 60 * 60 * 24 * 30; // 30 days
+      const { defineAuditConfig } = await import("./config.js");
+      const customConfig = defineAuditConfig({
+        apps: ["App1", "TestApp"] as const,
+        resourceTypes: ["Unknown", "User", "Order"] as const,
+        ttlSeconds: customTtlSeconds,
+      });
+      const customRepo = new AuditRepository(
+        mockLogger as unknown as Logger,
+        customConfig,
+        mockClient as unknown as DynamoDBClient,
+      );
+
+      const before = Math.floor(Date.now() / 1000);
+      await customRepo.upsertBatch([createMockUpsertInput()]);
+      const after = Math.floor(Date.now() / 1000);
+
+      const command = mockClient.send.mock.calls[0][0] as BatchWriteItemCommand;
+      const item = command.input.RequestItems?.[DynamoDB.Table.Name()]?.[0]?.PutRequest?.Item;
+      const ttl = item?.ttl?.N ? Number(item.ttl.N) : 0;
+
+      expect(ttl).toBeGreaterThanOrEqual(before + customTtlSeconds);
+      expect(ttl).toBeLessThanOrEqual(after + customTtlSeconds);
+    });
+
+    it("should use default 90-day TTL when ttlSeconds is not configured", async () => {
+      mockClient.send.mockResolvedValue({});
+
+      const defaultTtlSeconds = 60 * 60 * 24 * 90;
+      const before = Math.floor(Date.now() / 1000);
+      await repository.upsertBatch([createMockUpsertInput()]);
+      const after = Math.floor(Date.now() / 1000);
+
+      const command = mockClient.send.mock.calls[0][0] as BatchWriteItemCommand;
+      const item = command.input.RequestItems?.[DynamoDB.Table.Name()]?.[0]?.PutRequest?.Item;
+      const ttl = item?.ttl?.N ? Number(item.ttl.N) : 0;
+
+      expect(ttl).toBeGreaterThanOrEqual(before + defaultTtlSeconds);
+      expect(ttl).toBeLessThanOrEqual(after + defaultTtlSeconds);
+    });
+
     it("should resolve successfully when UnprocessedItems are returned on first call but empty on retry", async () => {
       vi.useFakeTimers();
 
       const tableName = DynamoDB.Table.Name();
       const items = [createMockUpsertInput()];
 
-      // First call returns unprocessed items; second call returns empty
       mockClient.send
         .mockResolvedValueOnce({
           UnprocessedItems: {
@@ -418,15 +461,12 @@ describe("AuditRepository", () => {
         ],
       };
 
-      // Always return unprocessed items
       mockClient.send.mockResolvedValue({ UnprocessedItems: unprocessedItems });
 
-      // Attach the rejection assertion before running timers so the rejection is handled immediately
       const promise = repository.upsertBatch(items);
       const rejectAssertion = expect(promise).rejects.toThrow(
         "BatchWriteItem failed: unprocessed items after 8 retries",
       );
-      // Advance timers repeatedly to drain all retry delays (8 retries, up to 30s each)
       for (let i = 0; i < 10; i++) {
         await vi.runAllTimersAsync();
       }
@@ -455,7 +495,6 @@ describe("AuditRepository", () => {
         ],
       };
 
-      // Return unprocessed twice, then resolve on 3rd call
       mockClient.send
         .mockResolvedValueOnce({ UnprocessedItems: unprocessedItems })
         .mockResolvedValueOnce({ UnprocessedItems: unprocessedItems })
@@ -940,6 +979,41 @@ describe("AuditRepository", () => {
 
       const command = mockClient.send.mock.calls[0][0] as UpdateItemCommand;
       expect(command.input.ExpressionAttributeValues?.[":newAttempt"]).toBeDefined();
+    });
+
+    it("should use config ttlSeconds for TTL in upsertItem", async () => {
+      const customTtlSeconds = 60 * 60 * 24 * 7; // 7 days
+      const { defineAuditConfig } = await import("./config.js");
+      const customConfig = defineAuditConfig({
+        apps: ["App1", "TestApp"] as const,
+        resourceTypes: ["Unknown", "User", "Order"] as const,
+        ttlSeconds: customTtlSeconds,
+      });
+      const customRepo = new AuditRepository(
+        mockLogger as unknown as Logger,
+        customConfig,
+        mockClient as unknown as DynamoDBClient,
+      );
+
+      mockClient.send.mockResolvedValue({
+        Attributes: marshall({
+          attempts: [{ number: 1, status: "success", at: "2024-01-01T00:00:00Z" }],
+        }),
+      });
+
+      const item = createMockUpsertInput();
+      const attempt = { number: 1, status: "success", at: "2024-01-01T00:00:00Z" };
+
+      const before = Math.floor(Date.now() / 1000);
+      await customRepo.upsertItem(item, attempt);
+      const after = Math.floor(Date.now() / 1000);
+
+      const command = mockClient.send.mock.calls[0][0] as UpdateItemCommand;
+      const ttlValue = command.input.ExpressionAttributeValues?.[":ttl"]?.N;
+      const ttl = ttlValue ? Number(ttlValue) : 0;
+
+      expect(ttl).toBeGreaterThanOrEqual(before + customTtlSeconds);
+      expect(ttl).toBeLessThanOrEqual(after + customTtlSeconds);
     });
   });
 
