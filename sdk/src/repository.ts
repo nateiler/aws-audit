@@ -831,7 +831,10 @@ export class AuditRepository<C extends AuditConfig> {
    * @returns TTL attribute with Unix timestamp in seconds
    * @internal
    */
-  private constructTTLAttribute(ttlSeconds: number = DEFAULT_TTL_SECONDS, date?: Date): TTLAttribute {
+  private constructTTLAttribute(
+    ttlSeconds: number = DEFAULT_TTL_SECONDS,
+    date?: Date,
+  ): TTLAttribute {
     const ttl = date || new Date();
 
     if (ttlSeconds) {
