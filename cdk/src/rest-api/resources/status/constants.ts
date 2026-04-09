@@ -1,3 +1,3 @@
 export const API_RESOURCE = {
-	RESOURCE: "status",
+  RESOURCE: "status",
 };

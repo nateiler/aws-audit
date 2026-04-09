@@ -201,7 +201,7 @@ type ListingItem = TraceListingItem & Pick<SecondaryKeys, "GSI1_SS_PK" | "GSI1_S
 type StatusListingItem = ListingAttributes &
   Pick<DynamoDBPrimaryKey, "PK" | "SK"> &
   Pick<SecondaryKeys, "GSI2_SS_PK" | "GSI2_SS_SK"> &
-  Pick<SecondaryKeys, "GSI1_SN_PK" | "GSI1_SN_SK">;
+  Partial<Pick<SecondaryKeys, "GSI1_SN_PK" | "GSI1_SN_SK">>;
 
 /**
  * Options for listing audit items by resource with typed App and ResourceType.
@@ -1060,9 +1060,13 @@ export class AuditRepository<C extends AuditConfig> {
    */
   private transformStatusListItem(item: StatusListingItem) {
     const [id] = item.SK.split("#");
+    const trace =
+      item.GSI1_SN_PK !== undefined && item.GSI1_SN_SK !== undefined
+        ? `${item.GSI1_SN_PK}:${item.GSI1_SN_SK}`
+        : undefined;
 
     return AuditListItemPayloadSchema.parse({
-      trace: `${item.GSI1_SN_PK}:${item.GSI1_SN_SK}`,
+      trace,
       ...item,
       id: id,
     });
